@@ -1,0 +1,7 @@
+name: fsc-lib
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.7
+  - pytest==5.4.3

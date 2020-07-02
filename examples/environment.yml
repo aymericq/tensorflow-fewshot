@@ -1,0 +1,15 @@
+name: tf-fs-examples
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.7
+  - ipykernel==5.3.0
+  - numpy==1.18.5
+  - numpy==1.18.5
+  - matplotlib==3.2.2
+  - scikit-image==0.17.2
+  - pip==20.1.1
+  - pip:
+    - tensorflow==2.2.0
+    - tensorflow_datasets==3.1.0

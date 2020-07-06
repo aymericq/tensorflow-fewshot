@@ -176,6 +176,6 @@ def _euclidean_distance(prototypes, embeddings):
     expanded_prototypes = tf.expand_dims(prototypes, 1)
     expanded_q_embed = tf.expand_dims(embeddings, 0)
     return tf.sqrt(tf.reduce_sum(
-        tf.square(expanded_prototypes - embeddings),
+        tf.square(expanded_prototypes - expanded_q_embed),
         2
     ))

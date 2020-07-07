@@ -97,7 +97,7 @@ class PrototypicalNetwork:
         prototypes = np.zeros((n_labels, self.output_dim)).astype(np.float32)
 
         self.label2proto_index = {
-            ind: np.argwhere(train_Y.flatten() == ind)
+            ind: np.argwhere(train_Y.flatten() == ind).flatten()
             for ind in np.unique(train_Y)
         }
 

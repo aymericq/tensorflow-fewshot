@@ -28,7 +28,8 @@ class PrototypicalNetwork:
             n_way=60,
             ks_shots=5,
             kq_shots=5,
-            optimizer='Adam'
+            optimizer='Adam',
+            logging_interval=200
     ):
         acc = []
         loss = []
@@ -75,8 +76,8 @@ class PrototypicalNetwork:
             # the value of the variables to minimize the loss.
             optimizer.apply_gradients(zip(grads, self.encoder.trainable_weights))
 
-            # Log every 200 episodes.
-            if episode % 5 == 0:
+            # Log every ‘logging_interval‘ episodes.
+            if episode % logging_interval == 0:
                 curr_acc = np.sum(tf.argmax(distrib, axis=1).numpy() == labels) / len(labels)
                 acc.append(float(curr_acc))
                 loss.append(float(loss_value))
@@ -93,10 +94,10 @@ class PrototypicalNetwork:
 
     def train(self, train_X, train_Y):
         n_labels = len(np.unique(train_Y))
-        prototypes = np.zeros((n_labels, self.output_dim))
+        prototypes = np.zeros((n_labels, self.output_dim)).astype(np.float32)
 
         self.label2proto_index = {
-            ind: np.argwhere(train_Y == ind).flatten()
+            ind: np.argwhere(train_Y.flatten() == ind)
             for ind in np.unique(train_Y)
         }
 
@@ -174,8 +175,7 @@ def _euclidean_distance(prototypes, embeddings):
     """Compute the distance of each embedding to each prototype."""
 
     expanded_prototypes = tf.expand_dims(prototypes, 1)
-    expanded_q_embed = tf.expand_dims(embeddings, 0)
     return tf.sqrt(tf.reduce_sum(
-        tf.square(expanded_prototypes - expanded_q_embed),
+        tf.square(expanded_prototypes - embeddings),
         2
     ))

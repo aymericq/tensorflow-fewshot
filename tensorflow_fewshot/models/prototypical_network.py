@@ -103,14 +103,15 @@ class PrototypicalNetwork:
 
         for i, label in enumerate(np.unique(train_Y)):
             prototypes[i, :] = tf.reduce_mean(
-                self.encoder(train_X[self.label2proto_index[label], :, :, :])
+                self.encoder(train_X[self.label2proto_index[label], :, :, :]),
+                axis=0
             )
 
         self.prototypes = prototypes
 
     def predict(self, X):
         dists = _euclidean_distance(self.prototypes, self.encoder(X).numpy())
-        return tf.argmax(dists, axis=0).numpy()
+        return tf.argmin(dists, axis=0).numpy()
 
 
 def _create_imageNetCNN(nb_hidden_layers=4, nb_filters=64, output_dim=64):

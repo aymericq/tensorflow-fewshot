@@ -15,7 +15,8 @@ class PrototypicalNetwork:
         else:
             raise NotImplementedError()
 
-        self.label2proto_index = {}
+        self._label_to_train_indices = {}
+        self._proto_index_to_label = None
         self.prototypes = None
 
     def meta_train(
@@ -96,22 +97,25 @@ class PrototypicalNetwork:
         n_labels = len(np.unique(train_Y))
         prototypes = np.zeros((n_labels, self.output_dim)).astype(np.float32)
 
-        self.label2proto_index = {
+        self._proto_index_to_label = np.zeros((n_labels,))
+
+        self._label_to_train_indices = {
             ind: np.argwhere(train_Y.flatten() == ind).flatten()
             for ind in np.unique(train_Y)
         }
 
         for i, label in enumerate(np.unique(train_Y)):
             prototypes[i, :] = tf.reduce_mean(
-                self.encoder(train_X[self.label2proto_index[label], :, :, :]),
+                self.encoder(train_X[self._label_to_train_indices[label], :, :, :]),
                 axis=0
             )
+            self._proto_index_to_label[i] = label
 
         self.prototypes = prototypes
 
     def predict(self, X):
         dists = _euclidean_distance(self.prototypes, self.encoder(X).numpy())
-        return tf.argmin(dists, axis=0).numpy()
+        return self._proto_index_to_label[tf.argmin(dists, axis=0).numpy()]
 
 
 def _create_imageNetCNN(nb_hidden_layers=4, nb_filters=64, output_dim=64):

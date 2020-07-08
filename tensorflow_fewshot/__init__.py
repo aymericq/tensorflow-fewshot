@@ -2,3 +2,5 @@
 
 TF-FS is intended to make the training of popular models convenient and as little verbose as possible.
 """
+
+import models

@@ -1,5 +1,5 @@
-Welcome to Tensorflow Few-Shot's documentation!
-===============================================
+Welcome
+=======
 
 .. automodule:: tensorflow_fewshot
     :members:
@@ -8,6 +8,7 @@ Welcome to Tensorflow Few-Shot's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   models/index
 
 
 Indices and tables

@@ -4,13 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-<<<<<<< HEAD
-    name="tensorflow-fewshot", # Replace with your own username
-    version="0.0.2",
-=======
     name="tensorflow-fewshot",
-    version="0.0.1",
->>>>>>> Remove useless comment.
+    version="0.0.2",
     author="Aymeric QUESNE",
     author_email="aymeric.quesne@octo.com",
     description="A Python package for few shot learning training and inference in computer vision using Tensorflow.",

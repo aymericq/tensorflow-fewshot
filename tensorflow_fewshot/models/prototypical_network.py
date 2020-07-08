@@ -32,24 +32,12 @@ class PrototypicalNetwork:
             optimizer='Adam',
             logging_interval=200
     ):
+        """Trains the model on the meta-training set."""
         acc = []
         loss = []
         test_acc = []
 
-        if optimizer == 'Adam':
-            if n_episode > 2000:
-                # boundaries == [2000, 4000, ..., nb_episodes]
-                boundaries = [2000 * i for i in range(1, n_episode // 2000 + 1)]
-                # values == [1e-3, .5e-3, 1e-4, ...]
-                values = [1e-3 / 2 ** i for i in range(n_episode // 2000 + 1)]
-                lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-                    boundaries, values)
-            else:
-                lr_schedule = 1e-3
-
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
-
-        self.encoder.compile(optimizer)
+        lr_schedule, optimizer = self.compile_model(n_episode, optimizer)
 
         for episode in range(n_episode):
             # Open a GradientTape to record the operations run
@@ -92,12 +80,34 @@ class PrototypicalNetwork:
                         float(curr_acc)
                         )
                 )
+        return acc, loss, test_acc
+
+    def compile_model(self, n_episode, optimizer):
+        """Compile the model.
+
+        Build the optimizer and the learning schedule according to the number of episodes, then compiles the model.
+        """
+        if optimizer == 'Adam':
+            if n_episode > 2000:
+                # boundaries == [2000, 4000, ..., nb_episodes]
+                boundaries = [2000 * i for i in range(1, n_episode // 2000 + 1)]
+                # values == [1e-3, .5e-3, 1e-4, ...]
+                values = [1e-3 / 2 ** i for i in range(n_episode // 2000 + 1)]
+                lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+                    boundaries, values)
+            else:
+                lr_schedule = 1e-3
+            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
+
+        self.encoder.compile(optimizer)
+        return lr_schedule, optimizer
 
     def train(self, train_X, train_Y):
+        """Train the model."""
         n_labels = len(np.unique(train_Y))
         prototypes = np.zeros((n_labels, self.output_dim)).astype(np.float32)
 
-        self._proto_index_to_label = np.zeros((n_labels,))
+        self._proto_index_to_label = np.zeros((n_labels,)).astype(np.int32)
 
         self._label_to_train_indices = {
             ind: np.argwhere(train_Y.flatten() == ind).flatten()
@@ -114,6 +124,7 @@ class PrototypicalNetwork:
         self.prototypes = prototypes
 
     def predict(self, X):
+        """Make predictions and return the inferred labels."""
         dists = _euclidean_distance(self.prototypes, self.encoder(X).numpy())
         return self._proto_index_to_label[tf.argmin(dists, axis=0).numpy()]
 

@@ -48,29 +48,75 @@
 <dt id="tensorflow_fewshot.models.PrototypicalNetwork">
 <em class="property">class </em><code class="sig-prename descclassname">tensorflow_fewshot.models.</code><code class="sig-name descname">PrototypicalNetwork</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">encoder</span><span class="o">=</span><span class="default_value">'ImageNetCNN'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implements Prototypical Networks from the original paper (Snell et al., 2017).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>encoder</strong> (<em>tf.keras.Model</em>) – The encoder used to map the image onto the metric space.</p>
+</dd>
+</dl>
 <dl class="py method">
-<dt id="tensorflow_fewshot.models.PrototypicalNetwork.compile_model">
-<code class="sig-name descname">compile_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_episode</span></em>, <em class="sig-param"><span class="n">optimizer</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork.compile_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compile the model.</p>
-<p>Build the optimizer and the learning schedule according to the number of episodes, then compiles the model.</p>
+<dt id="tensorflow_fewshot.models.PrototypicalNetwork.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_X</span></em>, <em class="sig-param"><span class="n">train_Y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits the model to the data.</p>
+<p>Computes the prototype of each class and the internal mapping between prototype index
+and label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_X</strong> (<em>numpy.array</em>) – A 4-dimensional array.</p></li>
+<li><p><strong>train_Y</strong> (<em>numpy.array</em>) – The corresponding labels, a 1-dimensional array of integers.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="tensorflow_fewshot.models.PrototypicalNetwork.meta_train">
 <code class="sig-name descname">meta_train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">meta_train_X</span></em>, <em class="sig-param"><span class="n">meta_train_Y</span></em>, <em class="sig-param"><span class="n">meta_val_X</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">meta_val_Y</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n_episode</span><span class="o">=</span><span class="default_value">8000</span></em>, <em class="sig-param"><span class="n">n_way</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">ks_shots</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">kq_shots</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">optimizer</span><span class="o">=</span><span class="default_value">'Adam'</span></em>, <em class="sig-param"><span class="n">logging_interval</span><span class="o">=</span><span class="default_value">200</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork.meta_train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trains the model on the meta-training set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meta_train_X</strong> (<em>numpy.array</em>) – The data set used for meta-training, must be of dimension 4.</p></li>
+<li><p><strong>meta_train_Y</strong> (<em>numpy.array</em>) – The corresponding set of labels, must be a single dimension array of integers</p></li>
+<li><p><strong>meta_val_X</strong> (<em>numpy.array</em>) – A validation set to track the performance of the model every few episodes.</p></li>
+<li><p><strong>meta_val_Y</strong> (<em>numpy.array</em>) – The corresponding set of validation labels.</p></li>
+<li><p><strong>n_episode</strong> (<em>int</em>) – Number of episodes for meta-training.</p></li>
+<li><p><strong>n_way</strong> (<em>int</em>) – Number of ways (or classes per episode).</p></li>
+<li><p><strong>ks_shots</strong> (<em>int</em>) – Number of image per class in the support set.</p></li>
+<li><p><strong>kq_shots</strong> (<em>int</em>) – Number of image per class in the query set.</p></li>
+<li><p><strong>optimizer</strong> (<em>tf.keras.optimizer</em>) – A valid Keras optimizer for training.</p></li>
+<li><p><strong>logging_interval</strong> (<em>int</em>) – log and display metrics every ‘logging_interval‘ episodes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>acc (list(float)): history of accuracy logged every ‘logging_interval‘ episodes.</p></li>
+<li><p>loss (list(float)): history of loss logged every ‘logging_interval‘ episodes.</p></li>
+<li><p>test_acc (list(float)): history of vaidation accuracy logged every ‘logging_interval‘ episodes.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>3-tuple</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="tensorflow_fewshot.models.PrototypicalNetwork.predict">
 <code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork.predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make predictions and return the inferred labels.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="tensorflow_fewshot.models.PrototypicalNetwork.train">
-<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">train_X</span></em>, <em class="sig-param"><span class="n">train_Y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork.train" title="Permalink to this definition">¶</a></dt>
-<dd><p>Train the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>numpy.array</em>) – A 4-dimensional array.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The predicted label for each data point, as a 1-dimensional array of integers.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>preds (numpy.array)</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

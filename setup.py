@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tensorflow-fewshot", # Replace with your own username
-    version="0.0.1",
+    version="0.0.2",
     author="Aymeric QUESNE",
     author_email="aymeric.quesne@octo.com",
     description="A Python package for few shot learning training and inference in computer vision using Tensorflow.",

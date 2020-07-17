@@ -77,8 +77,8 @@ class PrototypicalNetwork:
 
                 # Compute the loss value for this episode.
                 labels = np.array([[i] * kq_shots for i in range(n_way)]).flatten()
-                y_true = tf.keras.utils.to_categorical(labels, num_classes=n_way)
-                loss_value = tf.reduce_sum(tf.keras.losses.categorical_crossentropy(y_true, distrib))
+
+                loss_value = self._compute_loss(distrib, labels, n_way)
 
             # Use the gradient tape to automatically retrieve
             # the gradients of the trainable variables with respect to the loss.
@@ -101,9 +101,14 @@ class PrototypicalNetwork:
                         lr_schedule if type(lr_schedule) is float else lr_schedule(episode),
                         float(loss_value),
                         float(curr_acc)
-                        )
+                    )
                 )
         return acc, loss, test_acc
+
+    def _compute_loss(self, distrib, labels, n_way):
+        y_true = tf.keras.utils.to_categorical(labels, num_classes=n_way)
+        loss_value = tf.reduce_sum(tf.keras.losses.categorical_crossentropy(y_true, distrib))
+        return loss_value
 
     def _prepare_optimizer(self, n_episode, optimizer):
         """Compiles the model.
@@ -121,6 +126,8 @@ class PrototypicalNetwork:
             else:
                 lr_schedule = 1e-3
             optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
+        else:
+            raise NotImplementedError
 
         self.encoder.compile(optimizer)
         return lr_schedule, optimizer
@@ -207,9 +214,9 @@ def _run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
 
     # Sample N-way, KS support shots, KS query shots
     classes = np.random.choice(np.unique(episode_y), n_way)
+
     support_indices = np.zeros((n_way, ks_shots)).astype(np.int32)
     query_indices = np.zeros((n_way, kq_shots)).astype(np.int32)
-
     for i in range(n_way):
         indices = np.random.choice(np.argwhere(episode_y == classes[i]).flatten(), ks_shots + kq_shots)
         support_indices[i, :] = indices[:ks_shots]

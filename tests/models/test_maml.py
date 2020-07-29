@@ -97,3 +97,26 @@ def test_fit_on_two_layer_perceptron_is_correct_when_used_with_a_loss():
     # Then
     for i_weight, weights in enumerate(weight_set):
         assert np.all(weights == expected_weights[i_weight])
+
+
+def test_fit_on_two_layer_perceptron_is_correct_when_called_on_size_2_batch():
+    # Given
+    model = create_2l_perceptron()
+
+    maml = MAML(model, loss=lambda y, p: p)
+
+    data_x = np.ones((2,))
+    data_y = np.zeros((2, 1))
+
+    expected_weights = [
+        -np.ones((1, 2)),
+        -np.ones((2, 1)),
+    ]
+
+    # When
+    maml.fit(data_x, data_y)
+    weight_set = maml.model.get_weights()
+
+    # Then
+    for i_weight, weights in enumerate(weight_set):
+        assert np.all(weights == expected_weights[i_weight])

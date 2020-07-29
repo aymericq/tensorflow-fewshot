@@ -8,18 +8,22 @@ class PrototypicalNetwork:
     """Implements Prototypical Networks from the original paper (Snell et al., 2017).
 
     Args:
-        encoder (tf.keras.Model): The encoder used to map the image onto the metric space.
+        encoder (tf.keras.Model): The encoder used to map the image onto the metric space. Make sure that the input
+        is defined, otherwise the model can't infer output shape at initialization, which is required in later
+        computations.
     """
 
     def __init__(
             self,
-            encoder='ImageNetCNN'
+            encoder
     ):
-        if encoder == 'ImageNetCNN':
-            self.encoder = create_imageNetCNN()
-            self.output_dim = self.encoder.layers[-5].get_config()['filters']
-        else:
-            raise NotImplementedError()
+        if not isinstance(encoder, tf.keras.models.Model):
+            raise TypeError("Encoder must be an instance of keras.models.Model .")
+        self.encoder = encoder
+        try:
+            self.output_dim = self.encoder.output_shape[1]
+        except AttributeError:
+            raise ValueError('The encoder has to be built before instantiating the model.')
 
         self._label_to_train_indices = {}
         self._proto_index_to_label = None

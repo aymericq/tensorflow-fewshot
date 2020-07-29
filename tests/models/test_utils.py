@@ -1,7 +1,7 @@
 import unittest
 from numpy.random import normal
 import numpy as np
-from tensorflow_fewshot.models.utils import euclidean_distance
+from tensorflow_fewshot.models.utils import euclidean_distance, create_imageNetCNN
 
 
 # Given
@@ -38,3 +38,15 @@ class TestUtils(unittest.TestCase):
         # Then
         assert distances.shape == (2, 2)
         assert np.all(distances == true_dists)
+
+
+    def test_encoder_output_shape_is_10_64_when_passed_10_images(self):
+        # Given
+        encoder = create_imageNetCNN((28, 28, 1))
+        images = normal(size=(10, 28, 28, 1))
+
+        # When
+        embeddings = encoder(images)
+
+        # Then
+        assert embeddings.shape == (10, 64)

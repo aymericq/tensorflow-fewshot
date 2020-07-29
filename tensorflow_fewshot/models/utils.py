@@ -11,10 +11,12 @@ def euclidean_distance(prototypes, embeddings):
     ))
 
 
-def create_imageNetCNN(nb_hidden_layers=4, nb_filters=64):
+def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64):
     """Creates a Keras Sequential Model as described in Matching Nets paper (Vinyals et al., 2016)."""
 
-    layers = []
+    layers = [
+        tf.keras.layers.Input(input_shape)
+    ]
     for i in range(nb_hidden_layers):
         layers.extend([
             tf.keras.layers.Conv2D(nb_filters, (3, 3), padding='same'),

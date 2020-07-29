@@ -1,5 +1,6 @@
 import unittest
 
+from tensorflow_fewshot.models.utils import create_imageNetCNN
 import tensorflow_fewshot.models.prototypical_network as pn
 from numpy.random import normal
 import tensorflow as tf
@@ -18,7 +19,7 @@ class TestProtonet(unittest.TestCase):
 
     def test_encoder_output_shape_is_10_64_when_passed_10_images(self):
         # Given
-        encoder = pn._create_imageNetCNN()
+        encoder = create_imageNetCNN()
         images = normal(size=(10, 28, 28, 1))
 
         # When

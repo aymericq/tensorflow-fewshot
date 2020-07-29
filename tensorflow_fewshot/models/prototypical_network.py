@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from .utils import euclidean_distance
+
+from .utils import euclidean_distance, create_imageNetCNN
 
 
 class PrototypicalNetwork:
@@ -15,7 +16,7 @@ class PrototypicalNetwork:
             encoder='ImageNetCNN'
     ):
         if encoder == 'ImageNetCNN':
-            self.encoder = _create_imageNetCNN()
+            self.encoder = create_imageNetCNN()
             self.output_dim = self.encoder.layers[-5].get_config()['filters']
         else:
             raise NotImplementedError()
@@ -73,7 +74,7 @@ class PrototypicalNetwork:
                 # to its inputs are going to be recorded
                 # on the GradientTape.
                 distrib = tf.transpose(
-                    _run_episode(meta_train_X, meta_train_Y, n_way, ks_shots, kq_shots, self.encoder)
+                    run_episode(meta_train_X, meta_train_Y, n_way, ks_shots, kq_shots, self.encoder)
                 )
 
                 # Compute the loss value for this episode.
@@ -175,22 +176,7 @@ class PrototypicalNetwork:
         return self._proto_index_to_label[tf.argmin(dists, axis=0).numpy()]
 
 
-def _create_imageNetCNN(nb_hidden_layers=4, nb_filters=64):
-    """Creates a Keras Sequential Model as described in Matching Nets paper (Vinyals et al., 2016)."""
-
-    layers = []
-    for i in range(nb_hidden_layers):
-        layers.extend([
-            tf.keras.layers.Conv2D(nb_filters, (3, 3), padding='same'),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.ReLU(),
-            tf.keras.layers.MaxPool2D(pool_size=(2, 2))
-        ])
-    layers.append(tf.keras.layers.Flatten())
-    return tf.keras.models.Sequential(layers)
-
-
-def _run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
+def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
     """ Computes softmax of distances for one sampled episode.
 
     Given a set X of input images, their corresponding labels y, episode

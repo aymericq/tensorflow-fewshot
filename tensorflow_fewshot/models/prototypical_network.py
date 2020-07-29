@@ -80,7 +80,7 @@ class PrototypicalNetwork:
                 # Compute the loss value for this episode.
                 labels = np.array([[i] * kq_shots for i in range(n_way)]).flatten()
 
-                loss_value = self._compute_loss(distrib, labels, n_way)
+                loss_value = _compute_loss(distrib, labels, n_way)
 
             # Use the gradient tape to automatically retrieve
             # the gradients of the trainable variables with respect to the loss.
@@ -106,11 +106,6 @@ class PrototypicalNetwork:
                     )
                 )
         return acc, loss, test_acc
-
-    def _compute_loss(self, distrib, labels, n_way):
-        y_true = tf.keras.utils.to_categorical(labels, num_classes=n_way)
-        loss_value = tf.reduce_sum(tf.keras.losses.categorical_crossentropy(y_true, distrib))
-        return loss_value
 
     def _prepare_optimizer(self, n_episode, optimizer):
         """Compiles the model.
@@ -197,7 +192,6 @@ def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
     Returns:
         dist (numpy.array): the distance of each query datapoint to each prototype.
     """
-    im_width, im_height, im_n_channels = episode_X.shape[-3:]
 
     # Sample N-way, KS support shots, KS query shots
     classes = np.random.choice(np.unique(episode_y), n_way)
@@ -229,3 +223,9 @@ def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
 
     # neg_log_dist = distances + tf.math.log(tf.reduce_sum(tf.exp(-distances), 0))
     return tf.math.softmax(-distances, axis=0)
+
+
+def _compute_loss(distrib, labels, n_way):
+    y_true = tf.keras.utils.to_categorical(labels, num_classes=n_way)
+    loss_value = tf.reduce_sum(tf.keras.losses.categorical_crossentropy(y_true, distrib))
+    return loss_value

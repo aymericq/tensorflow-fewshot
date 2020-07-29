@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from .utils import euclidean_distance
 
 
 class PrototypicalNetwork:
@@ -170,7 +171,7 @@ class PrototypicalNetwork:
         Returns:
             preds (numpy.array): The predicted label for each data point, as a 1-dimensional array of integers.
         """
-        dists = _euclidean_distance(self.prototypes, self.encoder(X).numpy())
+        dists = euclidean_distance(self.prototypes, self.encoder(X).numpy())
         return self._proto_index_to_label[tf.argmin(dists, axis=0).numpy()]
 
 
@@ -238,17 +239,7 @@ def _run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
     )
 
     # Compute distances, log of opposite softmax
-    distances = _euclidean_distance(prototypes, query_embeddings)
+    distances = euclidean_distance(prototypes, query_embeddings)
 
     # neg_log_dist = distances + tf.math.log(tf.reduce_sum(tf.exp(-distances), 0))
     return tf.math.softmax(-distances, axis=0)
-
-
-def _euclidean_distance(prototypes, embeddings):
-    """Compute the distance of each embedding to each prototype."""
-
-    expanded_prototypes = tf.expand_dims(prototypes, 1)
-    return tf.sqrt(tf.reduce_sum(
-        tf.square(expanded_prototypes - embeddings),
-        2
-    ))

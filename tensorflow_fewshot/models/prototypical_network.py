@@ -9,8 +9,8 @@ class PrototypicalNetwork:
 
     Args:
         encoder (tf.keras.Model): The encoder used to map the image onto the metric space. Make sure that the input
-        is defined, otherwise the model can't infer output shape at initialization, which is required in later
-        computations.
+            shape is defined, otherwise the model can't infer the output shape at initialization, which is required in
+            later computations.
     """
 
     def __init__(
@@ -45,7 +45,7 @@ class PrototypicalNetwork:
         """Trains the model on the meta-training set.
 
         Args:
-            meta_train_X (numpy.array): The data set used for meta-training, must be of dimension 4.
+            meta_train_X (numpy.array): The data set used for meta-training.
             meta_train_Y (numpy.array): The corresponding set of labels, must be a single dimension array of integers
             meta_val_X (numpy.array): A validation set to track the performance of the model every few episodes.
             meta_val_Y (numpy.array): The corresponding set of validation labels.
@@ -140,7 +140,7 @@ class PrototypicalNetwork:
         and label.
 
         Args:
-            train_X (numpy.array): A 4-dimensional array.
+            train_X (numpy.array): An array containing training data, of shape [nb_samples, [model_input_shape]].
             train_Y (numpy.array): The corresponding labels, a 1-dimensional array of integers.
         """
         n_labels = len(np.unique(train_Y))
@@ -163,13 +163,13 @@ class PrototypicalNetwork:
         self.prototypes = prototypes
 
     def predict(self, X):
-        """Make predictions and return the inferred labels.
+        """Makes predictions and return the inferred labels.
 
         Args:
-            X (numpy.array): A 4-dimensional array.
+            X (numpy.array): An array containing the data to label, of shape [nb_samples, [model_input_shape]].
 
         Returns:
-            preds (numpy.array): The predicted label for each data point, as a 1-dimensional array of integers.
+            preds (numpy.array): The predicted label for each data point, a 1-dimensional array of integers.
         """
         dists = euclidean_distance(self.prototypes, self.encoder(X).numpy())
         return self._proto_index_to_label[tf.argmin(dists, axis=0).numpy()]
@@ -182,7 +182,7 @@ def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
     parameters, N-way, K-support shots, K-query shots and an encoder:
     Sample a support set and a query set according to the episode's parameters
     then computes the prototypes from the support set, and return for each image
-    of the query set, the negative logsoftmax of the the (negative) distance to
+    of the query set, the negative log-softmax of the the (negative) distance to
     each prototype.
 
     Args:

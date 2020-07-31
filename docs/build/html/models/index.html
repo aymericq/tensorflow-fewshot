@@ -46,11 +46,13 @@
 <h2>Prototypical Networks<a class="headerlink" href="#prototypical-networks" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="tensorflow_fewshot.models.PrototypicalNetwork">
-<em class="property">class </em><code class="sig-prename descclassname">tensorflow_fewshot.models.</code><code class="sig-name descname">PrototypicalNetwork</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">encoder</span><span class="o">=</span><span class="default_value">'ImageNetCNN'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">tensorflow_fewshot.models.</code><code class="sig-name descname">PrototypicalNetwork</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">encoder</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implements Prototypical Networks from the original paper (Snell et al., 2017).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>encoder</strong> (<em>tf.keras.Model</em>) – The encoder used to map the image onto the metric space.</p>
+<dd class="field-odd"><p><strong>encoder</strong> (<em>tf.keras.Model</em>) – The encoder used to map the image onto the metric space. Make sure that the input
+shape is defined, otherwise the model can’t infer the output shape at initialization, which is required in
+later computations.</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -62,7 +64,7 @@ and label.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_X</strong> (<em>numpy.array</em>) – A 4-dimensional array.</p></li>
+<li><p><strong>train_X</strong> (<em>numpy.array</em>) – An array containing training data, of shape [nb_samples, [model_input_shape]].</p></li>
 <li><p><strong>train_Y</strong> (<em>numpy.array</em>) – The corresponding labels, a 1-dimensional array of integers.</p></li>
 </ul>
 </dd>
@@ -76,7 +78,7 @@ and label.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>meta_train_X</strong> (<em>numpy.array</em>) – The data set used for meta-training, must be of dimension 4.</p></li>
+<li><p><strong>meta_train_X</strong> (<em>numpy.array</em>) – The data set used for meta-training.</p></li>
 <li><p><strong>meta_train_Y</strong> (<em>numpy.array</em>) – The corresponding set of labels, must be a single dimension array of integers</p></li>
 <li><p><strong>meta_val_X</strong> (<em>numpy.array</em>) – A validation set to track the performance of the model every few episodes.</p></li>
 <li><p><strong>meta_val_Y</strong> (<em>numpy.array</em>) – The corresponding set of validation labels.</p></li>
@@ -105,13 +107,13 @@ and label.</p>
 <dl class="py method">
 <dt id="tensorflow_fewshot.models.PrototypicalNetwork.predict">
 <code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.PrototypicalNetwork.predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make predictions and return the inferred labels.</p>
+<dd><p>Makes predictions and return the inferred labels.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>numpy.array</em>) – A 4-dimensional array.</p>
+<dd class="field-odd"><p><strong>X</strong> (<em>numpy.array</em>) – An array containing the data to label, of shape [nb_samples, [model_input_shape]].</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The predicted label for each data point, as a 1-dimensional array of integers.</p>
+<dd class="field-even"><p>The predicted label for each data point, a 1-dimensional array of integers.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>preds (numpy.array)</p>
@@ -119,6 +121,42 @@ and label.</p>
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+</div>
+<div class="section" id="module-tensorflow_fewshot.models.utils">
+<span id="utils"></span><h2>Utils<a class="headerlink" href="#module-tensorflow_fewshot.models.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="tensorflow_fewshot.models.utils.create_imageNetCNN">
+<code class="sig-prename descclassname">tensorflow_fewshot.models.utils.</code><code class="sig-name descname">create_imageNetCNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_shape</span></em>, <em class="sig-param"><span class="n">nb_hidden_layers</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">nb_filters</span><span class="o">=</span><span class="default_value">64</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.utils.create_imageNetCNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Keras Sequential Model as described in Matching Nets paper (Vinyals et al., 2016).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_shape</strong> (<em>int tuple</em>) – the shape of inputs passed to the model, usually (im_width, im_height, nb_channel).</p></li>
+<li><p><strong>nb_hidden_layers</strong> (<em>int</em>) – the number of convolutional blocks (conv2D, batchNorm, ReLU).</p></li>
+<li><p><strong>nb_filters</strong> (<em>int</em>) – the number of filters output by each Conv2D layer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="tensorflow_fewshot.models.utils.euclidean_distance">
+<code class="sig-prename descclassname">tensorflow_fewshot.models.utils.</code><code class="sig-name descname">euclidean_distance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prototypes</span></em>, <em class="sig-param"><span class="n">embeddings</span></em><span class="sig-paren">)</span><a class="headerlink" href="#tensorflow_fewshot.models.utils.euclidean_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the distance of each embedding to each prototype.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prototypes</strong> (<em>numpy.array</em>) – a (nb_prototypes, embedding_size)-shaped array.</p></li>
+<li><p><strong>embeddings</strong> (<em>numpy.array</em>) – a (nb_embeddings, embedding_size)-shaped array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A (nb_prototypes, nb_embeddings)-shaped array containing the euclidean distance of each embedding to each
+prototype.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -135,6 +173,7 @@ and label.</p>
   <ul>
 <li><a class="reference internal" href="#">Models</a><ul>
 <li><a class="reference internal" href="#prototypical-networks">Prototypical Networks</a></li>
+<li><a class="reference internal" href="#module-tensorflow_fewshot.models.utils">Utils</a></li>
 </ul>
 </li>
 </ul>

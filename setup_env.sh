@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly SCRIPT_DIRECTORY=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd);
-readonly ENV_NAME=fsl
+readonly ENV_NAME=tf-fs
 
 function main
 {

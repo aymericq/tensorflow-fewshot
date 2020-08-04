@@ -1,3 +1,4 @@
+from collections import generator
 from os import listdir
 from matplotlib.pyplot import imread
 from numpy.random import choice
@@ -6,7 +7,7 @@ import numpy as np
 
 class MetaDataset:
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         """Creates a meta-dataset from a file path.
 
         Creates a meta-dataset given of tree of folders of the following form:
@@ -28,7 +29,7 @@ class MetaDataset:
                     ...
 
         Args:
-             path (string): The path of the root folder of the dataset.
+             path (str): The path of the root folder of the dataset.
         """
         self.path = path
         self.meta_path = '/'.join((self.path, 'meta'))
@@ -48,7 +49,7 @@ class MetaDataset:
         for label in listdir(self.train_path):
             self.train_label_to_file_list[label] = [elem for elem in listdir("/".join((self.train_path, label)))]
 
-    def get_meta_dataset_generator(self):
+    def get_meta_dataset_generator(self) -> generator:
         """Returns a generator of the whole meta-dataset.
 
         Returns:
@@ -65,7 +66,7 @@ class MetaDataset:
 
         return generator_factory(self)
 
-    def get_train_dataset_generator(self):
+    def get_train_dataset_generator(self) -> generator:
         """Returns a generator of the whole training dataset.
 
         Returns:
@@ -83,6 +84,18 @@ class MetaDataset:
         return generator_factory(self)
 
     def get_one_episode(self, n_way: int, ks_shot: int, kq_shot: int) -> tuple:
+        """Samples one episode from the meta training set.
+
+        Args:
+            n_way (int): Number of classes to sample.
+            ks_shot (int): number of shots in the support set.
+            kq_shot (int): number of shots in the query set.
+
+        Returns:
+            - support_set_generator: a generator of the support set, yielding (image, label) tuples.
+            - query_set_generator: a generator of the query set, yielding (image, label) tuples.
+        """
+
         # bidirectional integer mapping for meta labels
         labels_to_class_indices = {lbl: i for i, lbl in enumerate(self.meta_label_to_file_indices.keys())}
         class_indices_to_labels = {i: lbl for lbl, i in labels_to_class_indices.items()}

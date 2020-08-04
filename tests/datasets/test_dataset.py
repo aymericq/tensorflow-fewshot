@@ -13,10 +13,16 @@ class TestMetaDataset(unittest.TestCase):
         mkdir(self.curr_dir)
 
         self.ref_meta_ds = [
-            (4  *np.ones((2, 2, 3), dtype=np.uint8), 1),
-            (54 *np.ones((2, 2, 3), dtype=np.uint8), 2),
-            (128*np.ones((2, 2, 3), dtype=np.uint8), 3),
-            (255*np.ones((2, 2, 3), dtype=np.uint8), 3),
+            (4 * np.ones((2, 2, 3), dtype=np.uint8), 1),
+            (6 * np.ones((2, 2, 3), dtype=np.uint8), 1),
+            (5 * np.ones((2, 2, 3), dtype=np.uint8), 1),
+            (54 * np.ones((2, 2, 3), dtype=np.uint8), 2),
+            (52 * np.ones((2, 2, 3), dtype=np.uint8), 2),
+            (50 * np.ones((2, 2, 3), dtype=np.uint8), 2),
+            (54 * np.ones((2, 2, 3), dtype=np.uint8), 2),
+            (128 * np.ones((2, 2, 3), dtype=np.uint8), 3),
+            (255 * np.ones((2, 2, 3), dtype=np.uint8), 3),
+            (245 * np.ones((2, 2, 3), dtype=np.uint8), 3),
         ]
 
         self.meta_dir = "/".join((self.curr_dir, "meta"))
@@ -94,6 +100,67 @@ class TestMetaDataset(unittest.TestCase):
                     im_in_ref_ds = True
 
             self.assertTrue(im_in_ref_ds)
+
+    def test_one_episode_has_right_size(self):
+        # Given
+        mds = MetaDataset(self.curr_dir)
+        n_way = 3
+        kq_shot = 1
+        ks_shot = 2
+
+        # When
+        support_generator, query_generator = mds.get_one_episode(n_way, ks_shot, kq_shot)
+        support_set = list(support_generator)
+        query_set = list(query_generator)
+
+        # Then
+        self.assertEqual(len(support_set), n_way*ks_shot)
+        self.assertEqual(len(query_set), n_way * kq_shot)
+
+    def test_one_episode_support_set_has_right_elements(self):
+        # Given
+        mds = MetaDataset(self.curr_dir)
+        n_way = 3
+        ks_shot = 2
+        kq_shot = 1
+
+        # When
+        support_generator, query_generator = mds.get_one_episode(n_way, ks_shot, kq_shot)
+        support_set = list(support_generator)
+
+        # Then
+        self.assertEqual(len(support_set), n_way*ks_shot)
+        # Check if every elem in support set is in the original dataset with the right label
+        for im, label in support_set:
+            im_in_ref_ds = False
+            for ref_im, ref_label in self.ref_meta_ds:
+                if (im == ref_im).all():
+                    self.assertEqual(label, str(ref_label))
+                    im_in_ref_ds = True
+            self.assertTrue(im_in_ref_ds)
+
+    def test_one_episode_query_set_has_right_elements(self):
+        # Given
+        mds = MetaDataset(self.curr_dir)
+        n_way = 3
+        ks_shot = 0
+        kq_shot = 2
+
+        # When
+        support_generator, query_generator = mds.get_one_episode(n_way, ks_shot, kq_shot)
+        query_set = list(query_generator)
+
+        # Then
+        self.assertEqual(len(query_set), n_way*kq_shot)
+        # Check if every elem in query set is in the original dataset with the right label
+        for im, label in query_set:
+            im_in_ref_ds = False
+            for ref_im, ref_label in self.ref_meta_ds:
+                if (im == ref_im).all():
+                    self.assertEqual(label, str(ref_label))
+                    im_in_ref_ds = True
+            self.assertTrue(im_in_ref_ds)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,8 @@
 from os import listdir
 from matplotlib.pyplot import imread
+from numpy.random import choice
+import numpy as np
+
 
 class MetaDataset:
 
@@ -30,14 +33,20 @@ class MetaDataset:
         self.path = path
         self.meta_path = '/'.join((self.path, 'meta'))
         self.train_path = '/'.join((self.path, 'train'))
-        self.meta_labels = {}
-        self.train_labels = {}
+        self.meta_label_to_file_indices = {}
+        self.train_label_to_file_list = {}
+        self.meta_ds_filenames = []
 
         for label in listdir(self.meta_path):
-            self.meta_labels[label] = [elem for elem in listdir("/".join((self.meta_path, label)))]
+            files = [elem for elem in listdir("/".join((self.meta_path, label)))]
+            self.meta_label_to_file_indices[label] = list(range(
+                len(self.meta_ds_filenames),
+                len(self.meta_ds_filenames) + len(files)
+            ))
+            self.meta_ds_filenames.extend(files)
 
         for label in listdir(self.train_path):
-            self.train_labels[label] = [elem for elem in listdir("/".join((self.train_path, label)))]
+            self.train_label_to_file_list[label] = [elem for elem in listdir("/".join((self.train_path, label)))]
 
     def get_meta_dataset_generator(self):
         """Returns a generator of the whole meta-dataset.
@@ -45,11 +54,12 @@ class MetaDataset:
         Returns:
             generator: a generator of tuples (image, label).
         """
+
         def generator_factory(mds):
-            for label in mds.meta_labels:
-                for im_path in mds.meta_labels[label]:
+            for label in mds.meta_label_to_file_indices:
+                for im_index in mds.meta_label_to_file_indices[label]:
                     yield (
-                        imread("/".join((mds.path, 'meta', str(label), im_path))),
+                        imread("/".join((mds.path, 'meta', str(label), self.meta_ds_filenames[im_index]))),
                         label
                     )
 
@@ -61,12 +71,55 @@ class MetaDataset:
         Returns:
             generator: a generator of tuples (image, label).
         """
+
         def generator_factory(mds):
-            for label in mds.train_labels:
-                for im_path in mds.train_labels[label]:
+            for label in mds.train_label_to_file_list:
+                for im_path in mds.train_label_to_file_list[label]:
                     yield (
                         imread("/".join((mds.path, 'train', str(label), im_path))),
                         label
                     )
 
         return generator_factory(self)
+
+    def get_one_episode(self, n_way: int, ks_shot: int, kq_shot: int) -> tuple:
+        # bidirectional integer mapping for meta labels
+        labels_to_class_indices = {lbl: i for i, lbl in enumerate(self.meta_label_to_file_indices.keys())}
+        class_indices_to_labels = {i: lbl for lbl, i in labels_to_class_indices.items()}
+
+        classes = choice(list(class_indices_to_labels.keys()), n_way, replace=False)
+        support_set_indices = np.zeros((n_way * ks_shot, 2), dtype=np.int)
+        query_set_indices = np.zeros((n_way * kq_shot, 2), dtype=np.int)
+
+        for i_class, cls in enumerate(classes):
+            class_indices = choice(
+                self.meta_label_to_file_indices[class_indices_to_labels[cls]],
+                ks_shot + kq_shot,
+                replace=False
+            )
+            support_set_indices[i_class * ks_shot:(i_class + 1) * ks_shot, 0] = class_indices[:ks_shot]
+            support_set_indices[i_class * ks_shot:(i_class + 1) * ks_shot, 1] = cls
+            query_set_indices[i_class * kq_shot:(i_class + 1) * kq_shot, 0] = class_indices[ks_shot:]
+            query_set_indices[i_class * kq_shot:(i_class + 1) * kq_shot, 1] = cls
+
+        def support_set_generator():
+            for i in range(n_way * ks_shot):
+                label = class_indices_to_labels[support_set_indices[i, 1]]
+                yield (
+                    imread(
+                        "/".join((self.path, 'meta', str(label), self.meta_ds_filenames[support_set_indices[i, 0]]))
+                    ),
+                    label
+                )
+
+        def query_set_generator():
+            for i in range(n_way * kq_shot):
+                label = class_indices_to_labels[query_set_indices[i, 1]]
+                yield (
+                    imread(
+                        "/".join((self.path, 'meta', str(label), self.meta_ds_filenames[query_set_indices[i, 0]]))
+                    ),
+                    label
+                )
+
+        return support_set_generator(), query_set_generator()

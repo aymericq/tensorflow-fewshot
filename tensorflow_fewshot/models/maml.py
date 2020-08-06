@@ -1,12 +1,6 @@
 import tensorflow as tf
 
-
-def apply_one_gradient_step(model, grads, alpha):
-    curr_weights = model.get_weights()
-    new_weights = []
-    for i in range(len(curr_weights)):
-        new_weights.append(curr_weights[i] - alpha*grads[i])
-    model.set_weights(new_weights)
+from .gradient_utils import take_one_gradient_step
 
 
 class MAML:
@@ -23,4 +17,4 @@ class MAML:
             loss_value = self.loss(data_y, preds)
 
         grads = tape.gradient(loss_value, self.model.weights)
-        apply_one_gradient_step(self.model, grads, alpha)
+        return take_one_gradient_step(self.model, grads, alpha)

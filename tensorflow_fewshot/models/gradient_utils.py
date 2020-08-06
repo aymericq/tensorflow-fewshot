@@ -24,6 +24,13 @@ def take_one_gradient_step(model: Model, grads: list, alpha: float = 1) -> Model
             name = var.name.split(':')[0].split('/')[-1]
             layer.__dict__['trainable_variable_names'].append(name)
 
+    # On met à jour les poids avec leur valeur numérique afin de garder la validité de `get_weights`
+    # TODO: refactor redundancy with code below
+    updated_weights = model.get_weights()
+    for i in range(len(updated_weights)):
+        updated_weights[i] -= alpha*grads[i]
+    cloned_model.set_weights(updated_weights)
+
     # On va mettre à jour les poids du modèle cloné mais sans passer par .set_weights()
     # On parcourt les layers et on affecte de nouvelles valeurs aux attributs .kernel et .bias (opérations tf)
     # L'index "k" est incrémenté de façon à récupérer à chaque fois la bonne matrice à partir de la liste "grads"

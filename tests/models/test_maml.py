@@ -8,17 +8,20 @@ import numpy as np
 def create_2l_perceptron():
     model = tf.keras.models.Sequential([
         tf.keras.layers.Input((1,)),
-        tf.keras.layers.Dense(2, use_bias=False),
-        tf.keras.layers.Dense(1, use_bias=False),
+        tf.keras.layers.Dense(2, kernel_initializer='ones', use_bias=False),
+        tf.keras.layers.Dense(1, kernel_initializer='ones', use_bias=False),
     ])
-    weights = [
-        np.ones((1, 2)),
-        np.ones((2, 1)),
-    ]
-    model.set_weights(weights)
 
     return model
 
+def create_squared_perceptron():
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Input((1,)),
+        tf.keras.layers.Dense(1, kernel_initializer='ones', use_bias=False),
+        tf.keras.layers.Lambda(lambda x: x**2),
+    ])
+
+    return model
 
 class MAMLTest(TestCase):
 
@@ -124,3 +127,36 @@ class MAMLTest(TestCase):
         # Then
         for i_weight, weights in enumerate(weight_set):
             self.assertTrue(np.all(weights == expected_weights[i_weight]))
+
+    def test_meta_learn_produces_right_model_after_1_step(self):
+        # See calculus derivations in theta.py
+        # Given
+        model = create_squared_perceptron()
+        maml = MAML(model, loss=tf.keras.losses.MSE)
+
+        meta_train_x = np.array([
+            [1],
+            [2],
+            [3],
+        ], dtype=np.float32)
+        meta_train_y = np.array([1, 2, 3])
+
+        eval_x = np.array([
+            [1],
+            [2],
+            [3],
+        ], dtype=np.float32)*1e-10
+        eval_y = (1 - 2779171867128)**2*eval_x**2
+
+        def task_generator():
+            for i in range(3):
+                support_set = meta_train_x[i, :], meta_train_y[i]
+                query_set = meta_train_x[i, :], meta_train_y[i]
+                yield support_set, query_set
+
+        # When
+        maml.meta_train(task_generator(), n_episode=1)
+        preds = maml.model(eval_x)
+
+        # Then
+        self.assertTrue(np.all(np.abs((preds - eval_y)) < 1e-1))

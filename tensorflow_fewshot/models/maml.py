@@ -1,4 +1,4 @@
-from collections import generator
+from typing import Generator, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -22,7 +22,7 @@ class MAML:
         grads = tape.gradient(loss_value, self.model.weights)
         return take_one_gradient_step(self.model, grads, alpha)
 
-    def meta_train(self, task_generator: generator, n_episode: int):
+    def meta_train(self, task_generator: Generator[tuple, None, None], n_episode: int):
         """Meta-trains the model according to MAML algorithm.
 
         Args:

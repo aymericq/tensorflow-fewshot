@@ -1,4 +1,4 @@
-from collections import generator
+from typing import Generator, Tuple
 from os import listdir
 from matplotlib.pyplot import imread
 from numpy.random import choice
@@ -49,7 +49,7 @@ class MetaDataset:
         for label in listdir(self.train_path):
             self.train_label_to_file_list[label] = [elem for elem in listdir("/".join((self.train_path, label)))]
 
-    def get_meta_dataset_generator(self) -> generator:
+    def get_meta_dataset_generator(self) -> Generator[Tuple[np.array, int], None, None]:
         """Returns a generator of the whole meta-dataset.
 
         Returns:
@@ -66,7 +66,7 @@ class MetaDataset:
 
         return generator_factory(self)
 
-    def get_train_dataset_generator(self) -> generator:
+    def get_train_dataset_generator(self) -> Generator[Tuple[np.array, int], None, None]:
         """Returns a generator of the whole training dataset.
 
         Returns:

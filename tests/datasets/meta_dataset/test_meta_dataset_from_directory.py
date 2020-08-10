@@ -1,5 +1,5 @@
 import unittest
-from tensorflow_fewshot.datasets import MetaDataset
+from tensorflow_fewshot.datasets import MetaDatasetFromDisk
 import numpy as np
 import matplotlib.pyplot as plt
 from os import getcwd, mkdir
@@ -59,7 +59,7 @@ class TestMetaDataset(unittest.TestCase):
 
     def test_create_and_get_meta_train_dataset_from_folder(self):
         # Given
-        mds = MetaDataset(self.curr_dir)
+        mds = MetaDatasetFromDisk(self.curr_dir)
 
         # When
         meta_train_generator = mds.get_meta_dataset_generator()
@@ -81,7 +81,7 @@ class TestMetaDataset(unittest.TestCase):
 
     def test_create_and_get_train_dataset_from_folder(self):
         # Given
-        mds = MetaDataset(self.curr_dir)
+        mds = MetaDatasetFromDisk(self.curr_dir)
 
         # When
         train_ds_generator = mds.get_train_dataset_generator()
@@ -103,7 +103,7 @@ class TestMetaDataset(unittest.TestCase):
 
     def test_one_episode_has_right_size(self):
         # Given
-        mds = MetaDataset(self.curr_dir)
+        mds = MetaDatasetFromDisk(self.curr_dir)
         n_way = 3
         kq_shot = 1
         ks_shot = 2
@@ -119,7 +119,7 @@ class TestMetaDataset(unittest.TestCase):
 
     def test_one_episode_support_set_has_right_elements(self):
         # Given
-        mds = MetaDataset(self.curr_dir)
+        mds = MetaDatasetFromDisk(self.curr_dir)
         n_way = 3
         ks_shot = 2
         kq_shot = 1
@@ -141,7 +141,7 @@ class TestMetaDataset(unittest.TestCase):
 
     def test_one_episode_query_set_has_right_elements(self):
         # Given
-        mds = MetaDataset(self.curr_dir)
+        mds = MetaDatasetFromDisk(self.curr_dir)
         n_way = 3
         ks_shot = 0
         kq_shot = 2

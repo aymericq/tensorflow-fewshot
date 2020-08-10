@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch, MagicMock
 
 from tensorflow_fewshot.models.maml import MAML
 import tensorflow as tf
@@ -155,8 +156,33 @@ class MAMLTest(TestCase):
                 yield support_set, query_set
 
         # When
-        maml.meta_train(task_generator(), n_episode=1)
+        maml.meta_train(task_generator, n_episode=1)
         preds = maml.model(eval_x)
 
         # Then
         self.assertTrue(np.all(np.abs((preds - eval_y)) < 1e-1))
+
+    def test_task_generator_is_called_n_episode_times(self):
+        # Given
+        model = create_squared_perceptron()
+        maml = MAML(model, loss=tf.keras.losses.MSE)
+
+        # When
+        meta_train_x = np.array([
+            [1],
+            [2],
+            [3],
+        ], dtype=np.float32)
+        meta_train_y = np.array([1, 2, 3])
+
+        def task_generator():
+            for i in range(3):
+                support_set = meta_train_x[i, :], meta_train_y[i]
+                query_set = meta_train_x[i, :], meta_train_y[i]
+                yield support_set, query_set
+
+        # Then
+        magic_task_generator = MagicMock(return_value=task_generator())
+        with patch.object(MAML, 'meta_train', wraps=maml.meta_train) as mock:
+            maml.meta_train(magic_task_generator, n_episode=7)
+            self.assertEqual(magic_task_generator.call_count, 7)

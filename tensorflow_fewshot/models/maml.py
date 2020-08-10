@@ -50,7 +50,7 @@ class MAML:
         """
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
-            for support_set, query_set in task_generator:
+            for support_set, query_set in task_generator():
                 x_support, y_support = support_set
                 x_query, y_query = query_set
                 with tf.GradientTape() as outer_tape:

@@ -9,14 +9,32 @@ from .gradient_utils import take_one_gradient_step
 class MAML:
     """Implements Model-Agnostic Meta-Learning (Finn et al., 2017)."""
 
-    def __init__(self, model, loss):
+    def __init__(self, model: tf.keras.models.Model, loss: tf.keras.losses.Loss):
+        """
+
+        Args:
+            model (Model): the model which training will be handled by the MAML algorithm.
+            loss (Loss): the loss to use when training the model.
+        """
         self.model = model
         self.loss = loss
 
     def fit(self, data_x, data_y, alpha=1):
+        """Fits the model to the given (possibly few-shot) data.
+
+        It does not updates the internal model, but rather returns an updated model that is not kept in the internal
+        state of the instance.
+
+        Args:
+            data_x (np.array): an array of input data.
+            data_y (np.array): an array of corresponding labels (integers).
+            alpha (float): the step of the gradient step used to update the model.
+
+        Returns:
+            updated_model (Model): a fitted Keras model.
+        """
         with tf.GradientTape() as tape:
             preds = self.model(data_x)
-            assert preds.shape == data_y.shape
             loss_value = self.loss(data_y, preds)
 
         grads = tape.gradient(loss_value, self.model.weights)

@@ -1,1 +1,2 @@
-from .meta_dataset import MetaDataset
+from .meta_dataset_from_disk import MetaDatasetFromDisk
+from .meta_dataset_from_array import MetaDatasetFromArray

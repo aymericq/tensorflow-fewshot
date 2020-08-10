@@ -20,13 +20,15 @@ def euclidean_distance(prototypes, embeddings):
     ))
 
 
-def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64):
+def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64, use_dense_head=False, output_dim=None):
     """Creates a Keras Sequential Model as described in Matching Nets paper (Vinyals et al., 2016).
 
     Args:
         input_shape (int tuple): the shape of inputs passed to the model, usually (im_width, im_height, nb_channel).
         nb_hidden_layers (int): the number of convolutional blocks (conv2D, batchNorm, ReLU).
         nb_filters (int): the number of filters output by each Conv2D layer.
+        use_dense_head (bool): when True, adds a dense layer on top of the encoder.
+        output_dim (int): the dimension of the output when using a dense head.
     """
 
     layers = [
@@ -40,4 +42,8 @@ def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64):
             tf.keras.layers.MaxPool2D(pool_size=(2, 2))
         ])
     layers.append(tf.keras.layers.Flatten())
+    if use_dense_head:
+        if output_dim is None:
+            raise ValueError("When using a dense head, you must specify the output dimension.")
+        layers.append(tf.keras.layers.Dense(output_dim))
     return tf.keras.models.Sequential(layers)

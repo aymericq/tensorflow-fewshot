@@ -50,3 +50,18 @@ class TestUtils(unittest.TestCase):
 
         # Then
         assert embeddings.shape == (10, 64)
+
+    def test_output_has_correct_size_when_using_head(self):
+        # Given
+        encoder = create_imageNetCNN((28, 28, 1), use_dense_head=True, output_dim=5)
+        images = normal(size=(10, 28, 28, 1))
+
+        # When
+        embeddings = encoder(images)
+
+        # Then
+        assert embeddings.shape == (10, 5)
+
+    def test_raise_error_if_CNN_created_with_head_but_not_size_is_passed(self):
+        with self.assertRaises(ValueError):
+            encoder = create_imageNetCNN((28, 28, 1), use_dense_head=True)

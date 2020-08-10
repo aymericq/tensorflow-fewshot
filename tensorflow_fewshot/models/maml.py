@@ -50,8 +50,7 @@ class MAML:
         """
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
-            for task in task_generator:
-                support_set, query_set = task
+            for support_set, query_set in task_generator:
                 x_support, y_support = support_set
                 x_query, y_query = query_set
                 with tf.GradientTape() as outer_tape:
@@ -64,9 +63,7 @@ class MAML:
                     outer_loss = self.loss(y_query, y_outer)
                 outer_grads = outer_tape.gradient(outer_loss, self.model.trainable_variables)
                 for i_grad, grad in enumerate(outer_grads):
-                    epi_grad[i_grad] = epi_grad[i_grad] + grad
-            model_weights = self.model.get_weights()
-            new_weights = [None] * len(model_weights)
-            for i_weight in range(len(model_weights)):
-                new_weights[i_weight] = model_weights[i_weight] - 1.0*epi_grad[i_weight]
-            self.model.set_weights(new_weights)
+                    epi_grad[i_grad] += grad
+
+            sgd = tf.keras.optimizers.SGD(learning_rate=1.0)
+            sgd.apply_gradients(zip(epi_grad, self.model.trainable_variables))

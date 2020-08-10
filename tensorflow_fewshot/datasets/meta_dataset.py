@@ -63,7 +63,6 @@ class MetaDataset:
                     label
                 )
 
-
     def get_train_dataset_generator(self) -> Generator[Tuple[np.array, int], None, None]:
         """Returns a generator of the whole training dataset.
 
@@ -110,25 +109,34 @@ class MetaDataset:
             query_set_indices[i_class * kq_shot:(i_class + 1) * kq_shot, 0] = class_indices[ks_shot:]
             query_set_indices[i_class * kq_shot:(i_class + 1) * kq_shot, 1] = cls
 
-        # TODO: useful ?
-        def support_set_generator():
-            for i in range(n_way * ks_shot):
-                label = class_indices_to_labels[support_set_indices[i, 1]]
-                yield (
-                    imread(
-                        "/".join((self.path, 'meta', str(label), self.meta_ds_filenames[support_set_indices[i, 0]]))
-                    ),
-                    label
-                )
+        support_labels = [
+            class_indices_to_labels[support_set_indices[i, 1]]
+            for i in range(n_way * ks_shot)
+        ]
 
-        def query_set_generator():
-            for i in range(n_way * kq_shot):
-                label = class_indices_to_labels[query_set_indices[i, 1]]
-                yield (
-                    imread(
-                        "/".join((self.path, 'meta', str(label), self.meta_ds_filenames[query_set_indices[i, 0]]))
-                    ),
-                    label
-                )
+        support_set = [
+            (
+                imread(
+                    "/".join((self.path, 'meta', str(support_labels[i]), self.meta_ds_filenames[support_set_indices[i, 0]]))
+                ),
+                support_labels[i]
+            )
+            for i in range(n_way * ks_shot)
+        ]
 
-        return support_set_generator(), query_set_generator()
+        query_labels = [
+            class_indices_to_labels[query_set_indices[i, 1]]
+            for i in range(n_way * kq_shot)
+        ]
+
+        query_set = [
+            (
+                imread(
+                    "/".join((self.path, 'meta', str(query_labels[i]), self.meta_ds_filenames[query_set_indices[i, 0]]))
+                ),
+                query_labels[i]
+            )
+            for i in range(n_way * kq_shot)
+        ]
+
+        return support_set, query_set

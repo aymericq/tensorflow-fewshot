@@ -56,15 +56,13 @@ class MetaDataset:
             generator: a generator of tuples (image, label).
         """
 
-        def generator_factory(mds):
-            for label in mds.meta_label_to_file_indices:
-                for im_index in mds.meta_label_to_file_indices[label]:
-                    yield (
-                        imread("/".join((mds.path, 'meta', str(label), self.meta_ds_filenames[im_index]))),
-                        label
-                    )
+        for label in self.meta_label_to_file_indices:
+            for im_index in self.meta_label_to_file_indices[label]:
+                yield (
+                    imread("/".join((self.path, 'meta', str(label), self.meta_ds_filenames[im_index]))),
+                    label
+                )
 
-        return generator_factory(self)
 
     def get_train_dataset_generator(self) -> Generator[Tuple[np.array, int], None, None]:
         """Returns a generator of the whole training dataset.
@@ -73,15 +71,12 @@ class MetaDataset:
             generator: a generator of tuples (image, label).
         """
 
-        def generator_factory(mds):
-            for label in mds.train_label_to_file_list:
-                for im_path in mds.train_label_to_file_list[label]:
-                    yield (
-                        imread("/".join((mds.path, 'train', str(label), im_path))),
-                        label
-                    )
-
-        return generator_factory(self)
+        for label in self.train_label_to_file_list:
+            for im_path in self.train_label_to_file_list[label]:
+                yield (
+                    imread("/".join((self.path, 'train', str(label), im_path))),
+                    label
+                )
 
     def get_one_episode(self, n_way: int, ks_shot: int, kq_shot: int) -> tuple:
         """Samples one episode from the meta training set.
@@ -115,6 +110,7 @@ class MetaDataset:
             query_set_indices[i_class * kq_shot:(i_class + 1) * kq_shot, 0] = class_indices[ks_shot:]
             query_set_indices[i_class * kq_shot:(i_class + 1) * kq_shot, 1] = cls
 
+        # TODO: useful ?
         def support_set_generator():
             for i in range(n_way * ks_shot):
                 label = class_indices_to_labels[support_set_indices[i, 1]]

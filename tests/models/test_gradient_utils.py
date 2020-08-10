@@ -70,6 +70,8 @@ class TestGradientUtils(TestCase):
         self.assertTrue((model2_weights[0] == -3*np.ones((2, 1))).all())
         self.assertTrue((model2_weights[1] == -3*np.ones((2, 1))).all())
 
+    # TODO: test on different layers and models: convnets, batchnorm, conv2d, pooling, etc.
+
 
 def create_2_layer_MLP():
     return tf.keras.models.Sequential([

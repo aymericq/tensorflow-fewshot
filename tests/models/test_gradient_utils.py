@@ -3,7 +3,7 @@ from unittest import TestCase
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Lambda
+from tensorflow.python.keras.layers import Dense, Lambda, BatchNormalization
 from tensorflow_fewshot.models.gradient_utils import take_one_gradient_step
 
 
@@ -49,13 +49,13 @@ class TestGradientUtils(TestCase):
         with tf.GradientTape() as outer_tape:
             with tf.GradientTape() as inner_tape:
                 y = model1(x)
-            grads = inner_tape.gradient(y, model1.trainable_variables)
+            grads = inner_tape.gradient(y, model1.variables, unconnected_gradients='zero')
             model2 = take_one_gradient_step(model1, grads)
             yp = model2(x)
         grad_of_grads = outer_tape.gradient(yp, model1.trainable_variables)
 
         # Then
-        self.assertEqual(grad_of_grads[0], 5202)
+        self.assertEqual(5202, grad_of_grads[0])
 
     def test_get_weights_returns_right_weights_after_update(self):
         # Given
@@ -69,6 +69,28 @@ class TestGradientUtils(TestCase):
         # Then
         self.assertTrue((model2_weights[0] == -3*np.ones((2, 1))).all())
         self.assertTrue((model2_weights[1] == -3*np.ones((2, 1))).all())
+
+    def test_gradient_tape_doesnt_crash_when_model_has_non_trainable_variables(self):
+        # Given
+        model = Sequential([
+            tf.keras.layers.Input((1,)),
+            BatchNormalization(),
+            Dense(1)
+        ])
+        initial_weights = model.get_weights()
+        x = np.array([[1]])
+
+        # When
+        with tf.GradientTape() as tape:
+            preds = model(x)
+        grads = tape.gradient(preds, model.variables, unconnected_gradients='zero')
+
+        # Then
+        np.testing.assert_equal(grads[2], np.zeros(initial_weights[2].shape))  # Moving mean
+        np.testing.assert_equal(grads[3], np.zeros(initial_weights[3].shape))  # Moving Variance
+        updated_model = take_one_gradient_step(model, grads)
+        np.testing.assert_equal(initial_weights[2], updated_model.get_weights()[2])
+        np.testing.assert_equal(initial_weights[3], updated_model.get_weights()[3])
 
     # TODO: test on different layers and models: convnets, batchnorm, conv2d, pooling, etc.
 

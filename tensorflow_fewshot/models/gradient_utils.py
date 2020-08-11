@@ -21,8 +21,8 @@ def take_one_gradient_step(model: Model, grads: list, alpha: float = 1) -> Model
     for layer in cloned_model.layers:
         layer.__dict__['trainable_variable_names'] = []
         for var in layer.trainable_variables:
-            name = var.name.split(':')[0].split('/')[-1]
-            layer.__dict__['trainable_variable_names'].append(name)
+            var_name = var.name.split(':')[0].split('/')[-1]
+            layer.__dict__['trainable_variable_names'].append(var_name)
 
     # On met à jour les poids avec leur valeur numérique afin de garder la validité de `get_weights`
     # TODO: refactor redundancy with code below
@@ -36,10 +36,12 @@ def take_one_gradient_step(model: Model, grads: list, alpha: float = 1) -> Model
     # L'index "k" est incrémenté de façon à récupérer à chaque fois la bonne matrice à partir de la liste "grads"
     k = 0
     for j in range(len(cloned_model.layers)):
-
-        for trainable_var_name in cloned_model.layers[j].__dict__['trainable_variable_names']:
-            # Update le kernel du layer, s'il en possède un
-            cloned_model.layers[j].__dict__[name] = tf.subtract(model.layers[j].__dict__[name], alpha * grads[k])
+        for var in cloned_model.layers[j].variables:
+            weight_name = var.name.split(':')[0].split('/')[-1]
+            if weight_name in cloned_model.layers[j].__dict__['trainable_variable_names']:
+                # Update le kernel du layer, s'il en possède un
+                cloned_model.layers[j].__dict__[weight_name] = tf.subtract(model.layers[j].__dict__[weight_name], alpha * grads[k])
+            k += 1
 
     # /!\ WARNING : Après la mise à jour, le modèle cloné n'a plus de trainable vars. À voir si c'est problématique
     return cloned_model

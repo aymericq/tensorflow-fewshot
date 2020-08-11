@@ -57,13 +57,13 @@ class MAML:
                     with tf.GradientTape() as inner_tape:
                         y_inner = self.model(x_support)
                         loss_val = self.loss(y_support, y_inner)
-                    inner_grads = inner_tape.gradient(loss_val, self.model.trainable_variables)
+                    inner_grads = inner_tape.gradient(loss_val, self.model.variables, unconnected_gradients='zero')
                     updated_model = take_one_gradient_step(self.model, inner_grads)
                     y_outer = updated_model(x_query)
                     outer_loss = self.loss(y_query, y_outer)
-                outer_grads = outer_tape.gradient(outer_loss, self.model.trainable_variables)
+                outer_grads = outer_tape.gradient(outer_loss, self.model.variables, unconnected_gradients='zero')
                 for i_grad, grad in enumerate(outer_grads):
                     epi_grad[i_grad] += grad
 
             sgd = tf.keras.optimizers.SGD(learning_rate=1.0)
-            sgd.apply_gradients(zip(epi_grad, self.model.trainable_variables))
+            sgd.apply_gradients(zip(epi_grad, self.model.variables))

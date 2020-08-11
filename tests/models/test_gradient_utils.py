@@ -74,8 +74,9 @@ class TestGradientUtils(TestCase):
         # Given
         model = Sequential([
             tf.keras.layers.Input((1,)),
+            Dense(3),
             BatchNormalization(),
-            Dense(1)
+            Dense(7)
         ])
         initial_weights = model.get_weights()
         x = np.array([[1]])

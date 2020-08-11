@@ -166,8 +166,32 @@ class MAMLTest(TestCase):
         # Given
         model = create_squared_perceptron()
         maml = MAML(model, loss=tf.keras.losses.MSE)
+        meta_train_x = np.array([
+            [1],
+            [2],
+            [3],
+        ], dtype=np.float32)
+        meta_train_y = np.array([1, 2, 3])
 
-        # When
+        def task_generator():
+            for i in range(3):
+                support_set = meta_train_x[i, :], meta_train_y[i]
+                query_set = meta_train_x[i, :], meta_train_y[i]
+                yield support_set, query_set
+        # Then
+        magic_task_generator = MagicMock(return_value=task_generator())
+        with patch.object(MAML, 'meta_train', wraps=maml.meta_train) as mock:
+            maml.meta_train(magic_task_generator, n_episode=7)
+            self.assertEqual(magic_task_generator.call_count, 7)
+
+    def test_meta_train_doesnt_crash_with_model_with_non_trainable_variables(self):
+        # Given
+        model = tf.keras.models.Sequential([
+            tf.keras.layers.Input((1,)),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dense(1)
+        ])
+        maml = MAML(model, loss=tf.keras.losses.MSE)
         meta_train_x = np.array([
             [1],
             [2],
@@ -181,8 +205,8 @@ class MAMLTest(TestCase):
                 query_set = meta_train_x[i, :], meta_train_y[i]
                 yield support_set, query_set
 
+        # When
+        maml.meta_train(task_generator, n_episode=3)
+
         # Then
-        magic_task_generator = MagicMock(return_value=task_generator())
-        with patch.object(MAML, 'meta_train', wraps=maml.meta_train) as mock:
-            maml.meta_train(magic_task_generator, n_episode=7)
-            self.assertEqual(magic_task_generator.call_count, 7)
+        self.assertIsNotNone(model(np.array([[1]])))

@@ -40,16 +40,25 @@ class MAML:
         grads = tape.gradient(loss_value, self.model.weights)
         return take_one_gradient_step(self.model, grads, alpha)
 
-    def meta_train(self, task_generator: Generator[tuple, None, None], n_episode: int, episode_end_callback=None):
+    def meta_train(
+        self,
+        task_generator: Generator[tuple, None, None],
+        n_episode: int,
+        alpha:float = 1e-2,
+        learning_rate:float = 1e-3,
+        episode_end_callback=None
+    ):
         """Meta-trains the model according to MAML algorithm.
 
         Args:
             task_generator (generator): A generator of few_shot tasks. Each task should be a couple
                 (support_set, query_set), themselves being a tuple (data, label).
             n_episode (int): the number of episodes tu run.
+            alpha (float): learning rate of the inner_loop
+            learning_rate (float): learning rate of the outer loop
             episode_end_callback (function): a function called at the end of each episode.
         """
-        sgd = tf.keras.optimizers.SGD(learning_rate=1.0)
+        sgd = tf.keras.optimizers.SGD(learning_rate=learning_rate)
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
             epi_loss = 0
@@ -61,7 +70,7 @@ class MAML:
                         y_inner = self.model(x_support)
                         loss_val = self.loss(y_support, y_inner)
                     inner_grads = inner_tape.gradient(loss_val, self.model.variables, unconnected_gradients='zero')
-                    updated_model = take_one_gradient_step(self.model, inner_grads)
+                    updated_model = take_one_gradient_step(self.model, inner_grads, alpha)
                     y_outer = updated_model(x_query)
                     outer_loss = self.loss(y_query, y_outer)
 
@@ -72,5 +81,8 @@ class MAML:
             sgd.apply_gradients(zip(epi_grad, self.model.variables))
 
             if episode_end_callback is not None:
-                kwargs = {'episode_loss': epi_loss}
+                kwargs = {
+                    'episode': i_epi,
+                    'episode_loss': epi_loss,
+                }
                 episode_end_callback(**kwargs)

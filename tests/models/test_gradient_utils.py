@@ -87,11 +87,11 @@ class TestGradientUtils(TestCase):
         grads = tape.gradient(preds, model.variables, unconnected_gradients='zero')
 
         # Then
-        np.testing.assert_equal(grads[2], np.zeros(initial_weights[2].shape))  # Moving mean
-        np.testing.assert_equal(grads[3], np.zeros(initial_weights[3].shape))  # Moving Variance
-        updated_model = take_one_gradient_step(model, grads)
-        np.testing.assert_equal(initial_weights[2], updated_model.get_weights()[2])
-        np.testing.assert_equal(initial_weights[3], updated_model.get_weights()[3])
+        np.testing.assert_equal(grads[4], np.zeros(initial_weights[2].shape))  # Moving mean
+        np.testing.assert_equal(grads[5], np.zeros(initial_weights[3].shape))  # Moving Variance
+        updated_model = take_one_gradient_step(model, grads, alpha=1.0)
+        np.testing.assert_equal(initial_weights[4], updated_model.get_weights()[4])
+        np.testing.assert_equal(initial_weights[5], updated_model.get_weights()[5])
 
     # TODO: test on different layers and models: convnets, batchnorm, conv2d, pooling, etc.
 

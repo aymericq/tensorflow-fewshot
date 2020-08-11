@@ -29,7 +29,7 @@ class TestMetaDatasetFromArray(TestCase):
         self.assertEqual(n_way * kq_shot, query_x.shape[0])
         self.assertEqual(n_way * kq_shot, query_y.shape[0])
 
-    def test_episode_data_is_correctly_labeled(self):
+    def test_episode_data_has_matching_labels(self):
         # Given
         n_samples = 100
         width = 21
@@ -47,19 +47,27 @@ class TestMetaDatasetFromArray(TestCase):
         query_x, query_y = query_set
 
         # Then
+        labeling_dict = {}
         for i_support in range(support_x.shape[0]):
             exists_in_ref_data = False
             for i in range(data_x.shape[0]):
                 if np.all(data_x[i] == support_x[i_support, :, :, :]):
-                    self.assertEqual(support_y[i_support], data_y[i])
                     exists_in_ref_data = True
+                    if support_y[i_support] in labeling_dict:
+                        self.assertEqual(labeling_dict[support_y[i_support]], data_y[i])
+                    else:
+                        labeling_dict[support_y[i_support]] = data_y[i]
             self.assertTrue(exists_in_ref_data)
 
+        labeling_dict = {}
         for i_query in range(query_x.shape[0]):
             exists_in_ref_data = False
             for i in range(data_x.shape[0]):
                 if np.all(data_x[i] == query_x[i_query]):
-                    self.assertEqual(query_y[i_query], data_y[i])
+                    if query_y[i_query] in labeling_dict:
+                        self.assertEqual(labeling_dict[query_y[i_query]], data_y[i])
+                    else:
+                        labeling_dict[query_y[i_query]] = data_y[i]
                     exists_in_ref_data = True
             self.assertTrue(exists_in_ref_data)
 
@@ -122,3 +130,54 @@ class TestMetaDatasetFromArray(TestCase):
         for label in query_labels:
             self.assertEqual(len(np.argwhere(query_y == label)), kq_shot)
 
+    def test_episode_labels_are_contiguous_integers(self):
+        # Given
+        n_samples = 100
+        width = 3
+        height = 3
+        n_channel = 3
+        data_x = normal(size=(n_samples, width, height, n_channel))
+        data_y = np.tile(np.arange(6), n_samples // 6 + 1)[:n_samples]
+        np.random.shuffle(data_y)
+        n_way, ks_shot, kq_shot = 3, 4, 5
+
+        # When
+        meta_ds = MetaDatasetFromArray(data_x, data_y)
+        support_set, query_set = meta_ds.get_one_episode(n_way, ks_shot, kq_shot)
+        support_x, support_y = support_set
+        query_x, query_y = query_set
+
+        # Then
+        self.assertEqual(n_way, len(np.unique(support_y)))
+        self.assertEqual(0, np.min(support_y))
+        self.assertEqual(n_way - 1, np.max(support_y))
+
+        self.assertEqual(n_way, len(np.unique(query_y)))
+        self.assertEqual(0, np.min(query_y))
+        self.assertEqual(n_way - 1, np.max(query_y))
+
+    def test_one_hot_encoding_is_correct(self):
+        # Given
+        n_samples = 100
+        width = 3
+        height = 3
+        n_channel = 3
+        data_x = normal(size=(n_samples, width, height, n_channel))
+        data_y = np.tile(np.arange(6), n_samples // 6 + 1)[:n_samples]
+        np.random.shuffle(data_y)
+        n_way, ks_shot, kq_shot = 3, 4, 5
+
+        # When
+        meta_ds = MetaDatasetFromArray(data_x, data_y)
+        support_set, query_set = meta_ds.get_one_episode(n_way, ks_shot, kq_shot, one_hot_encode=True)
+        support_x, support_y = support_set
+        query_x, query_y = query_set
+
+        # Then
+        support_one_hot_truth = np.eye(n_way)
+        support_one_hot_truth = np.repeat(support_one_hot_truth, ks_shot, axis=0)
+        np.testing.assert_equal(support_y, support_one_hot_truth)
+
+        query_one_hot_truth = np.eye(n_way)
+        query_one_hot_truth = np.repeat(query_one_hot_truth, kq_shot, axis=0)
+        np.testing.assert_equal(query_y, query_one_hot_truth)

@@ -155,3 +155,29 @@ class TestMetaDatasetFromArray(TestCase):
         self.assertEqual(n_way, len(np.unique(query_y)))
         self.assertEqual(0, np.min(query_y))
         self.assertEqual(n_way - 1, np.max(query_y))
+
+    def test_one_hot_encoding_is_correct(self):
+        # Given
+        n_samples = 100
+        width = 3
+        height = 3
+        n_channel = 3
+        data_x = normal(size=(n_samples, width, height, n_channel))
+        data_y = np.tile(np.arange(6), n_samples // 6 + 1)[:n_samples]
+        np.random.shuffle(data_y)
+        n_way, ks_shot, kq_shot = 3, 4, 5
+
+        # When
+        meta_ds = MetaDatasetFromArray(data_x, data_y)
+        support_set, query_set = meta_ds.get_one_episode(n_way, ks_shot, kq_shot, one_hot_encode=True)
+        support_x, support_y = support_set
+        query_x, query_y = query_set
+
+        # Then
+        support_one_hot_truth = np.eye(n_way)
+        support_one_hot_truth = np.repeat(support_one_hot_truth, ks_shot, axis=0)
+        np.testing.assert_equal(support_y, support_one_hot_truth)
+
+        query_one_hot_truth = np.eye(n_way)
+        query_one_hot_truth = np.repeat(query_one_hot_truth, kq_shot, axis=0)
+        np.testing.assert_equal(query_y, query_one_hot_truth)

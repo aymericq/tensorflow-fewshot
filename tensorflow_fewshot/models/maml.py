@@ -40,16 +40,19 @@ class MAML:
         grads = tape.gradient(loss_value, self.model.weights)
         return take_one_gradient_step(self.model, grads, alpha)
 
-    def meta_train(self, task_generator: Generator[tuple, None, None], n_episode: int):
+    def meta_train(self, task_generator: Generator[tuple, None, None], n_episode: int, episode_end_callback=None):
         """Meta-trains the model according to MAML algorithm.
 
         Args:
             task_generator (generator): A generator of few_shot tasks. Each task should be a couple
                 (support_set, query_set), themselves being a tuple (data, label).
             n_episode (int): the number of episodes tu run.
+            episode_end_callback (function): a function called at the end of each episode.
         """
+        sgd = tf.keras.optimizers.SGD(learning_rate=1.0)
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
+            epi_loss = 0
             for support_set, query_set in task_generator():
                 x_support, y_support = support_set
                 x_query, y_query = query_set
@@ -61,9 +64,13 @@ class MAML:
                     updated_model = take_one_gradient_step(self.model, inner_grads)
                     y_outer = updated_model(x_query)
                     outer_loss = self.loss(y_query, y_outer)
+
                 outer_grads = outer_tape.gradient(outer_loss, self.model.variables, unconnected_gradients='zero')
                 for i_grad, grad in enumerate(outer_grads):
                     epi_grad[i_grad] += grad
-
-            sgd = tf.keras.optimizers.SGD(learning_rate=1.0)
+                epi_loss += outer_loss
             sgd.apply_gradients(zip(epi_grad, self.model.variables))
+
+            if episode_end_callback is not None:
+                kwargs = {'episode_loss': epi_loss}
+                episode_end_callback(**kwargs)

@@ -210,3 +210,33 @@ class MAMLTest(TestCase):
 
         # Then
         self.assertIsNotNone(model(np.array([[1]])))
+
+    def test_episode_end_callback_is_called(self):
+        # Given
+        # Given
+        model = tf.keras.models.Sequential([
+            tf.keras.layers.Input((1,)),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dense(1)
+        ])
+        maml = MAML(model, loss=tf.keras.losses.MSE)
+        meta_train_x = np.array([
+            [1],
+            [2],
+            [3],
+        ], dtype=np.float32)
+        meta_train_y = np.array([1, 2, 3])
+
+        def task_generator():
+            for i in range(3):
+                support_set = meta_train_x[i, :], meta_train_y[i]
+                query_set = meta_train_x[i, :], meta_train_y[i]
+                yield support_set, query_set
+
+        # When
+        mock_callback = MagicMock()
+        maml.meta_train(task_generator, n_episode=3, episode_end_callback=mock_callback)
+
+        # Then
+        for args in mock_callback.call_args_list:
+            self.assertTrue('episode_loss' in args[-1])

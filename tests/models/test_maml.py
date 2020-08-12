@@ -1,3 +1,4 @@
+import tracemalloc
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
@@ -213,7 +214,6 @@ class MAMLTest(TestCase):
 
     def test_episode_end_callback_is_called(self):
         # Given
-        # Given
         model = tf.keras.models.Sequential([
             tf.keras.layers.Input((1,)),
             tf.keras.layers.BatchNormalization(),
@@ -240,3 +240,42 @@ class MAMLTest(TestCase):
         # Then
         for args in mock_callback.call_args_list:
             self.assertTrue('episode_loss' in args[-1])
+
+    def test_meta_train_doesnt_grow_memory_linearly_with_n_episode(self):
+        # Given
+        # big beefy model
+        model = tf.keras.models.Sequential([
+            tf.keras.layers.Input((1,)),
+            tf.keras.layers.Dense(100),
+            tf.keras.layers.Dense(100),
+            tf.keras.layers.Dense(100),
+            tf.keras.layers.Dense(100),
+            tf.keras.layers.Dense(100),
+        ])
+        maml = MAML(model, loss=tf.keras.losses.MSE)
+        meta_train_x = np.array([
+            [1],
+            [2],
+            [3],
+        ], dtype=np.float32)
+        meta_train_y = np.array([1, 2, 3])
+
+        def task_generator():
+            for i in range(3):
+                support_set = meta_train_x[i, :], meta_train_y[i]
+                query_set = meta_train_x[i, :], meta_train_y[i]
+                yield support_set, query_set
+
+        # When
+        tracemalloc.start()
+        maml.meta_train(task_generator, n_episode=1)
+        current_mem_one_ep, _ = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        tracemalloc.start()
+        maml.meta_train(task_generator, n_episode=10)
+        current_mem_ten_ep, _ = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        # Then
+        self.assertLess(current_mem_ten_ep, 1.2 * current_mem_one_ep)

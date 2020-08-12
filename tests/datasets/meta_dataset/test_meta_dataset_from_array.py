@@ -3,6 +3,7 @@ from unittest import TestCase
 import numpy as np
 from tensorflow_fewshot.datasets import MetaDatasetFromArray
 from numpy.random import normal, randint
+import tracemalloc
 
 
 class TestMetaDatasetFromArray(TestCase):

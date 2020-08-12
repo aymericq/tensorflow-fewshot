@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.models import Sequential, clone_model
 from tensorflow.python.keras.layers import Dense, Lambda, BatchNormalization
 from tensorflow_fewshot.models.gradient_utils import take_one_gradient_step
 
@@ -16,7 +16,8 @@ class TestGradientUtils(TestCase):
         grads = model1.get_weights()
 
         # When
-        model2 = take_one_gradient_step(model1, grads)
+        model2 = clone_model(model1)
+        model2 = take_one_gradient_step(model1, model2, grads)
         model2_weights = [layer.kernel for layer in model2.layers if layer.trainable]
 
         # Then
@@ -30,7 +31,8 @@ class TestGradientUtils(TestCase):
         grads = model1.get_weights()
 
         # When
-        model2 = take_one_gradient_step(model1, grads, alpha=4)
+        model2 = clone_model(model1)
+        model2 = take_one_gradient_step(model1, model2, grads, alpha=4)
         model2_weights = [layer.kernel for layer in model2.layers if layer.trainable]
 
         # Then
@@ -45,12 +47,13 @@ class TestGradientUtils(TestCase):
         ])
         x = np.array([[3]])
 
+        model2 = clone_model(model1)
         # When
         with tf.GradientTape() as outer_tape:
             with tf.GradientTape() as inner_tape:
                 y = model1(x)
             grads = inner_tape.gradient(y, model1.variables, unconnected_gradients='zero')
-            model2 = take_one_gradient_step(model1, grads)
+            model2 = take_one_gradient_step(model1, model2, grads)
             yp = model2(x)
         grad_of_grads = outer_tape.gradient(yp, model1.trainable_variables)
 
@@ -63,7 +66,8 @@ class TestGradientUtils(TestCase):
         grads = model.get_weights()
 
         # When
-        model2 = take_one_gradient_step(model, grads, alpha=4)
+        model2 = clone_model(model)
+        model2 = take_one_gradient_step(model, model2, grads, alpha=4)
         model2_weights = model2.get_weights()  # Actually different from directly getting the kernel
 
         # Then
@@ -89,7 +93,8 @@ class TestGradientUtils(TestCase):
         # Then
         np.testing.assert_equal(grads[4], np.zeros(initial_weights[2].shape))  # Moving mean
         np.testing.assert_equal(grads[5], np.zeros(initial_weights[3].shape))  # Moving Variance
-        updated_model = take_one_gradient_step(model, grads, alpha=1.0)
+        updated_model = clone_model(model)
+        updated_model = take_one_gradient_step(model, updated_model, grads, alpha=1.0)
         np.testing.assert_equal(initial_weights[4], updated_model.get_weights()[4])
         np.testing.assert_equal(initial_weights[5], updated_model.get_weights()[5])
 

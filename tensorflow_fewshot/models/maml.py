@@ -38,15 +38,16 @@ class MAML:
             loss_value = self.loss(data_y, preds)
 
         grads = tape.gradient(loss_value, self.model.weights)
-        return take_one_gradient_step(self.model, grads, alpha)
+        cloned_model = tf.keras.models.clone_model(self.model)
+        return take_one_gradient_step(self.model, cloned_model, grads, alpha)
 
     def meta_train(
-        self,
-        task_generator: Generator[tuple, None, None],
-        n_episode: int,
-        alpha:float = 1e-2,
-        learning_rate:float = 1e-3,
-        episode_end_callback=None
+            self,
+            task_generator: Generator[tuple, None, None],
+            n_episode: int,
+            alpha: float = 1e-2,
+            learning_rate: float = 1e-3,
+            episode_end_callback=None
     ):
         """Meta-trains the model according to MAML algorithm.
 
@@ -59,6 +60,7 @@ class MAML:
             episode_end_callback (function): a function called at the end of each episode.
         """
         sgd = tf.keras.optimizers.SGD(learning_rate=learning_rate)
+        cloned_model = tf.keras.models.clone_model(self.model)
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
             epi_loss = 0
@@ -70,7 +72,7 @@ class MAML:
                         y_inner = self.model(x_support)
                         loss_val = self.loss(y_support, y_inner)
                     inner_grads = inner_tape.gradient(loss_val, self.model.variables, unconnected_gradients='zero')
-                    updated_model = take_one_gradient_step(self.model, inner_grads, alpha)
+                    updated_model = take_one_gradient_step(self.model, cloned_model, inner_grads, alpha)
                     y_outer = updated_model(x_query)
                     outer_loss = self.loss(y_query, y_outer)
 

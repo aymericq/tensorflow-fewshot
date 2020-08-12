@@ -2,7 +2,7 @@ from tensorflow.keras.models import clone_model, Model
 import tensorflow as tf
 
 
-def take_one_gradient_step(model: Model, grads: list, alpha: float = 1) -> Model:
+def take_one_gradient_step(model: Model, cloned_model: Model, grads: list, alpha: float = 1) -> Model:
     """Clones `model` and updates its weights without breaking the computational graph.
 
     Args:
@@ -13,9 +13,6 @@ def take_one_gradient_step(model: Model, grads: list, alpha: float = 1) -> Model
     Returns:
         cloned_model (Model): a cloned model of `model` with updated weights.
     """
-    # On crée un clone du modèle d'origine
-    # Le clone est identique au model, il a des .trainable_variables qui ont les mêmes valeurs que l'original
-    cloned_model = clone_model(model)
 
     # On enregistre le nom des variables trainable
     for layer in cloned_model.layers:

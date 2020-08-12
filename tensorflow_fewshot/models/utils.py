@@ -46,4 +46,5 @@ def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64, use_dense
         if output_dim is None:
             raise ValueError("When using a dense head, you must specify the output dimension.")
         layers.append(tf.keras.layers.Dense(output_dim))
+        layers.append(tf.keras.layers.Softmax)
     return tf.keras.models.Sequential(layers)

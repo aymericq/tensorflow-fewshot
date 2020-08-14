@@ -37,7 +37,7 @@ class MAML:
             preds = self.model(data_x)
             loss_value = self.loss(data_y, preds)
 
-        grads = tape.gradient(loss_value, self.model.weights)
+        grads = tape.gradient(loss_value, self.model.weights, unconnected_gradients='zero')
         cloned_model = tf.keras.models.clone_model(self.model)
         return take_one_gradient_step(self.model, cloned_model, grads, alpha)
 

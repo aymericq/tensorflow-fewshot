@@ -11,18 +11,17 @@ class TestGradientUtils(TestCase):
 
     def test_update_weights_creates_model_with_right_weights(self):
         # Given
-        model1 = create_2_layer_MLP()
-
-        grads = model1.get_weights()
+        initial_model = create_2_layer_MLP()
+        grads = initial_model.get_weights()
 
         # When
-        model2 = clone_model(model1)
-        model2 = take_one_gradient_step(model1, model2, grads)
-        model2_weights = [layer.kernel for layer in model2.layers if layer.trainable]
+        to_be_updated_model = clone_model(initial_model)
+        take_one_gradient_step(initial_model, to_be_updated_model, grads)
+        to_be_updated_model_weights = [layer.kernel for layer in to_be_updated_model.layers if layer.trainable]
 
         # Then
-        np.testing.assert_equal(model2_weights[0].numpy(), np.zeros((1, 2)))
-        np.testing.assert_equal(model2_weights[1].numpy(), np.zeros((2, 1)))
+        np.testing.assert_equal(to_be_updated_model_weights[0].numpy(), np.zeros((1, 2)))
+        np.testing.assert_equal(to_be_updated_model_weights[1].numpy(), np.zeros((2, 1)))
 
     def test_update_weights_creates_model_with_right_weights_with_alpha_2(self):
         # Given
@@ -36,10 +35,10 @@ class TestGradientUtils(TestCase):
         model2_weights = [layer.kernel for layer in model2.layers if layer.trainable]
 
         # Then
-        self.assertTrue((model2_weights[0] == -3*np.ones((2, 1))).numpy().all())
-        self.assertTrue((model2_weights[1] == -3*np.ones((2, 1))).numpy().all())
+        np.testing.assert_equal(model2_weights[0].numpy(), -3*np.ones((1, 2)))
+        np.testing.assert_equal(model2_weights[1].numpy(), -3*np.ones((2, 1)))
 
-    def test_test_2nd_order_gradient_through_updated_model(self):
+    def test_2nd_order_gradient_through_updated_model(self):
         # Given
         model1 = Sequential([
             Dense(1, use_bias=False, kernel_initializer='ones', input_shape=(1,)),
@@ -48,6 +47,7 @@ class TestGradientUtils(TestCase):
         x = np.array([[3]])
 
         model2 = clone_model(model1)
+
         # When
         with tf.GradientTape() as outer_tape:
             with tf.GradientTape() as inner_tape:

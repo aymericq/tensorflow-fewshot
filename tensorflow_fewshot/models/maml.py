@@ -1,4 +1,4 @@
-from typing import Generator, Tuple
+from typing import Generator, Callable
 
 import numpy as np
 import tensorflow as tf
@@ -41,11 +41,12 @@ class MAML:
         grads = tape.gradient(loss_value, self.model.weights, unconnected_gradients='zero')
         if self.eval_model is None:
             self.eval_model = tf.keras.models.clone_model(self.model)
-        return take_one_gradient_step(self.model, self.eval_model, grads, alpha)
+        take_one_gradient_step(self.model, self.eval_model, grads, alpha)
+        return self.eval_model
 
     def meta_train(
             self,
-            task_generator: Generator[tuple, None, None],
+            task_generator: Callable[[], Generator[tuple, None, None]],
             n_episode: int,
             alpha: float = 1e-2,
             learning_rate: float = 1e-3,
@@ -61,9 +62,10 @@ class MAML:
             alpha (float): learning rate of the inner_loop
             learning_rate (float): learning rate of the outer loop
             episode_end_callback (function): a function called at the end of each episode.
+            clip_gradient : gradient extremum values
         """
-        sgd = tf.keras.optimizers.SGD(learning_rate=learning_rate)
-        cloned_model = tf.keras.models.clone_model(self.model)
+        sgd = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipvalue=clip_gradient)
+        updated_model = tf.keras.models.clone_model(self.model)
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
             epi_loss = 0
@@ -71,21 +73,12 @@ class MAML:
                 x_support, y_support = support_set
                 x_query, y_query = query_set
                 with tf.GradientTape() as outer_tape:
-                    with tf.GradientTape() as inner_tape:
-                        y_inner = self.model(x_support)
-                        loss_val = self.loss(y_support, y_inner)
-                    inner_grads = inner_tape.gradient(loss_val, self.model.variables, unconnected_gradients='zero')
-                    updated_model = take_one_gradient_step(self.model, cloned_model, inner_grads, alpha)
-                    y_outer = updated_model(x_query)
-                    outer_loss = self.loss(y_query, y_outer)
+                    outer_loss = self._compute_task_loss(alpha, updated_model, x_query, x_support, y_query, y_support)
 
                 outer_grads = outer_tape.gradient(outer_loss, self.model.variables, unconnected_gradients='zero')
                 for i_grad, grad in enumerate(outer_grads):
                     epi_grad[i_grad] += grad
                 epi_loss += outer_loss
-                if clip_gradient is not None:
-                    for i_grad, grad in enumerate(epi_grad):
-                        epi_grad[i_grad] = np.clip(grad, -clip_gradient, clip_gradient)
             sgd.apply_gradients(zip(epi_grad, self.model.variables))
 
             if episode_end_callback is not None:
@@ -95,3 +88,13 @@ class MAML:
                     'episode_loss': epi_loss,
                 }
                 episode_end_callback(**kwargs)
+
+    def _compute_task_loss(self, alpha, updated_model, x_query, x_support, y_query, y_support):
+        with tf.GradientTape() as inner_tape:
+            y_inner = self.model(x_support)
+            loss_val = self.loss(y_support, y_inner)
+        inner_grads = inner_tape.gradient(loss_val, self.model.variables, unconnected_gradients='zero')
+        take_one_gradient_step(self.model, updated_model, inner_grads, alpha)
+        y_outer = updated_model(x_query)
+        outer_loss = self.loss(y_query, y_outer)
+        return outer_loss

@@ -16,14 +16,16 @@ def create_2l_perceptron():
 
     return model
 
+
 def create_squared_perceptron():
     model = tf.keras.models.Sequential([
         tf.keras.layers.Input((1,)),
         tf.keras.layers.Dense(1, kernel_initializer='ones', use_bias=False),
-        tf.keras.layers.Lambda(lambda x: x**2),
+        tf.keras.layers.Lambda(lambda x: x ** 2),
     ])
 
     return model
+
 
 class MAMLTest(TestCase):
 
@@ -37,7 +39,6 @@ class MAMLTest(TestCase):
 
         # Then
         self.assertIsNotNone(maml)
-
 
     def test_fit_on_two_layer_perceptron_is_correct(self):
         # Given
@@ -61,7 +62,6 @@ class MAMLTest(TestCase):
         for i_weight, weights in enumerate(weight_set):
             self.assertTrue(np.all(weights == expected_weights[i_weight]))
 
-
     def test_fit_on_two_layer_perceptron_is_correct_when_passed_a_value_for_alpha(self):
         # Given
         model = create_2l_perceptron()
@@ -84,7 +84,6 @@ class MAMLTest(TestCase):
         for i_weight, weights in enumerate(weight_set):
             self.assertTrue(np.all(weights == expected_weights[i_weight]))
 
-
     def test_fit_on_two_layer_perceptron_is_correct_when_used_with_a_loss(self):
         # Given
         model = create_2l_perceptron()
@@ -95,8 +94,8 @@ class MAMLTest(TestCase):
         data_y = np.zeros((1, 1))
 
         expected_weights = [
-            -3*np.ones((1, 2)),
-            -3*np.ones((2, 1)),
+            -3 * np.ones((1, 2)),
+            -3 * np.ones((2, 1)),
         ]
 
         # When
@@ -106,7 +105,6 @@ class MAMLTest(TestCase):
         # Then
         for i_weight, weights in enumerate(weight_set):
             self.assertTrue(np.all(weights == expected_weights[i_weight]))
-
 
     def test_fit_on_two_layer_perceptron_is_correct_when_called_on_size_2_batch(self):
         # Given
@@ -147,8 +145,8 @@ class MAMLTest(TestCase):
             [1],
             [2],
             [3],
-        ], dtype=np.float32)*1e-10
-        eval_y = (1 - 2779171867128)**2*eval_x**2
+        ], dtype=np.float32) * 1e-10
+        eval_y = (1 - 2779171867128) ** 2 * eval_x ** 2
 
         def task_generator():
             for i in range(3):
@@ -179,6 +177,7 @@ class MAMLTest(TestCase):
                 support_set = meta_train_x[i, :], meta_train_y[i]
                 query_set = meta_train_x[i, :], meta_train_y[i]
                 yield support_set, query_set
+
         # Then
         magic_task_generator = MagicMock(return_value=task_generator())
         with patch.object(MAML, 'meta_train', wraps=maml.meta_train) as mock:

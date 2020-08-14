@@ -16,6 +16,7 @@ class MAML:
             model (Model): the model which training will be handled by the MAML algorithm.
             loss (Loss): the loss to use when training the model.
         """
+        self.eval_model = None
         self.model = model
         self.loss = loss
 
@@ -37,9 +38,10 @@ class MAML:
             preds = self.model(data_x)
             loss_value = self.loss(data_y, preds)
 
-        grads = tape.gradient(loss_value, self.model.weights)
-        cloned_model = tf.keras.models.clone_model(self.model)
-        return take_one_gradient_step(self.model, cloned_model, grads, alpha)
+        grads = tape.gradient(loss_value, self.model.weights, unconnected_gradients='zero')
+        if self.eval_model is None:
+            self.eval_model = tf.keras.models.clone_model(self.model)
+        return take_one_gradient_step(self.model, self.eval_model, grads, alpha)
 
     def meta_train(
             self,

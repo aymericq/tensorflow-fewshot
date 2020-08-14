@@ -47,7 +47,8 @@ class MAML:
             n_episode: int,
             alpha: float = 1e-2,
             learning_rate: float = 1e-3,
-            episode_end_callback=None
+            episode_end_callback=None,
+            clip_gradient=None
     ):
         """Meta-trains the model according to MAML algorithm.
 

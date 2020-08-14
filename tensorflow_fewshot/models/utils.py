@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow import expand_dims, sqrt, reduce_sum, square
 
+
 def euclidean_distance(prototypes, embeddings):
     """Computes the distance of each embedding to each prototype.
 

@@ -21,8 +21,8 @@ class TestGradientUtils(TestCase):
         model2_weights = [layer.kernel for layer in model2.layers if layer.trainable]
 
         # Then
-        self.assertTrue((model2_weights[0] == -np.zeros((2, 1))).numpy().all())
-        self.assertTrue((model2_weights[1] == -np.zeros((2, 1))).numpy().all())
+        np.testing.assert_equal(model2_weights[0].numpy(), np.zeros((1, 2)))
+        np.testing.assert_equal(model2_weights[1].numpy(), np.zeros((2, 1)))
 
     def test_update_weights_creates_model_with_right_weights_with_alpha_2(self):
         # Given

@@ -47,7 +47,8 @@ class MAML:
             n_episode: int,
             alpha: float = 1e-2,
             learning_rate: float = 1e-3,
-            episode_end_callback=None
+            episode_end_callback=None,
+            clip_gradient=None
     ):
         """Meta-trains the model according to MAML algorithm.
 
@@ -80,10 +81,14 @@ class MAML:
                 for i_grad, grad in enumerate(outer_grads):
                     epi_grad[i_grad] += grad
                 epi_loss += outer_loss
+                if clip_gradient is not None:
+                    for i_grad, grad in enumerate(epi_grad):
+                        epi_grad[i_grad] = np.clip(grad, -clip_gradient, clip_gradient)
             sgd.apply_gradients(zip(epi_grad, self.model.variables))
 
             if episode_end_callback is not None:
                 kwargs = {
+                    'episode_gradients': epi_grad,
                     'episode': i_epi,
                     'episode_loss': epi_loss,
                 }

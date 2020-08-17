@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock
 
 from tensorflow_fewshot.models.utils import create_imageNetCNN
 import tensorflow_fewshot.models.prototypical_network as pn
@@ -91,6 +92,27 @@ class TestProtonet(unittest.TestCase):
 
         # Then
         assert preds.shape == (3,)
+
+
+    def test_meta_train_calls_callback(self):
+        # Given
+        encoder = create_imageNetCNN(input_shape=(28, 28, 1))
+        meta_train_X = np.ones((2, 28, 28, 1))
+        meta_train_Y = np.array((1, 2))
+        train_X = np.zeros((2, 28, 28, 1))
+        train_Y = np.array((2, 1))
+
+        model = pn.PrototypicalNetwork(encoder=encoder)
+        expected_callback_arguments = ['episode_loss', 'episode_gradients']
+
+        # When
+        mock_callback = Mock()
+        model.meta_train(meta_train_X, meta_train_Y, n_episode=4, n_way=2, episode_end_callback=mock_callback)
+
+        # Then
+        self.assertEqual(mock_callback.call_count, 4)
+        for arg_name in expected_callback_arguments:
+            self.assertIn(arg_name, mock_callback.call_args[-1])
 
     def test_model_doesnt_break_on_full_use_cycle_with_custom_model(self):
         # Given

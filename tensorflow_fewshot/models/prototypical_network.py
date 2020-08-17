@@ -33,38 +33,25 @@ class PrototypicalNetwork:
             self,
             meta_train_X,
             meta_train_Y,
-            meta_val_X=None,
-            meta_val_Y=None,
             n_episode=8000,
             n_way=60,
             ks_shots=5,
             kq_shots=5,
             optimizer='Adam',
-            logging_interval=200
+            episode_end_callback=None
     ):
         """Trains the model on the meta-training set.
 
         Args:
             meta_train_X (numpy.array): The data set used for meta-training.
             meta_train_Y (numpy.array): The corresponding set of labels, must be a single dimension array of integers
-            meta_val_X (numpy.array): A validation set to track the performance of the model every few episodes.
-            meta_val_Y (numpy.array): The corresponding set of validation labels.
             n_episode (int): Number of episodes for meta-training.
             n_way (int): Number of ways (or classes per episode).
             ks_shots (int): Number of image per class in the support set.
             kq_shots (int): Number of image per class in the query set.
             optimizer (tf.keras.optimizer): A valid Keras optimizer for training.
-            logging_interval (int): log and display metrics every ‘logging_interval‘ episodes.
-
-        Return:
-            3-tuple:
-                - acc (list(float)): history of accuracy logged every ‘logging_interval‘ episodes.
-                - loss (list(float)): history of loss logged every ‘logging_interval‘ episodes.
-                - test_acc (list(float)): history of vaidation accuracy logged every ‘logging_interval‘ episodes.
+            episode_end_callback (Callable): callback called at the end of each episode.
         """
-        acc = []
-        loss = []
-        test_acc = []
 
         lr_schedule, optimizer = self._prepare_optimizer(n_episode, optimizer)
 
@@ -94,22 +81,12 @@ class PrototypicalNetwork:
             # the value of the variables to minimize the loss.
             optimizer.apply_gradients(zip(grads, self.encoder.trainable_weights))
 
-            # Log every ‘logging_interval‘ episodes.
-            if episode % logging_interval == 0:
-                curr_acc = np.sum(tf.argmax(distrib, axis=1).numpy() == labels) / len(labels)
-                acc.append(float(curr_acc))
-                loss.append(float(loss_value))
-
-                print(
-                    "Episode %d; lr: %.2e, training loss: %.4f, train accuracy: %.2f"
-                    % (
-                        episode,
-                        lr_schedule if type(lr_schedule) is float else lr_schedule(episode),
-                        float(loss_value),
-                        float(curr_acc)
-                    )
-                )
-        return acc, loss, test_acc
+            if episode_end_callback is not None:
+                args = {
+                    'episode_loss': loss_value,
+                    'episode_gradients': grads
+                }
+                episode_end_callback(**args)
 
     def _prepare_optimizer(self, n_episode, optimizer):
         """Compiles the model.

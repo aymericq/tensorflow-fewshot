@@ -178,11 +178,12 @@ class MAMLTest(TestCase):
                 query_set = meta_train_x[i, :], meta_train_y[i]
                 yield support_set, query_set
 
-        # Then
+        # When
         magic_task_generator = MagicMock(return_value=task_generator())
-        with patch.object(MAML, 'meta_train', wraps=maml.meta_train) as mock:
-            maml.meta_train(magic_task_generator, n_episode=7)
-            self.assertEqual(magic_task_generator.call_count, 7)
+        maml.meta_train(magic_task_generator, n_episode=7)
+
+        # Then
+        self.assertEqual(magic_task_generator.call_count, 7)
 
     def test_meta_train_doesnt_crash_with_model_with_non_trainable_variables(self):
         # Given

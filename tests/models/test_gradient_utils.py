@@ -31,7 +31,7 @@ class TestGradientUtils(TestCase):
 
         # When
         model2 = clone_model(model1)
-        model2 = take_one_gradient_step(model1, model2, grads, alpha=4)
+        take_one_gradient_step(model1, model2, grads, alpha=4)
         model2_weights = [layer.kernel for layer in model2.layers if layer.trainable]
 
         # Then
@@ -53,7 +53,7 @@ class TestGradientUtils(TestCase):
             with tf.GradientTape() as inner_tape:
                 y = model1(x)
             grads = inner_tape.gradient(y, model1.variables, unconnected_gradients='zero')
-            model2 = take_one_gradient_step(model1, model2, grads)
+            take_one_gradient_step(model1, model2, grads)
             yp = model2(x)
         grad_of_grads = outer_tape.gradient(yp, model1.trainable_variables)
 
@@ -67,7 +67,7 @@ class TestGradientUtils(TestCase):
 
         # When
         model2 = clone_model(model)
-        model2 = take_one_gradient_step(model, model2, grads, alpha=4)
+        take_one_gradient_step(model, model2, grads, alpha=4)
         model2_weights = model2.get_weights()  # Actually different from directly getting the kernel
 
         # Then
@@ -94,7 +94,7 @@ class TestGradientUtils(TestCase):
         np.testing.assert_equal(grads[4], np.zeros(initial_weights[2].shape))  # Moving mean
         np.testing.assert_equal(grads[5], np.zeros(initial_weights[3].shape))  # Moving Variance
         updated_model = clone_model(model)
-        updated_model = take_one_gradient_step(model, updated_model, grads, alpha=1.0)
+        take_one_gradient_step(model, updated_model, grads, alpha=1.0)
         np.testing.assert_equal(initial_weights[4], updated_model.get_weights()[4])
         np.testing.assert_equal(initial_weights[5], updated_model.get_weights()[5])
 

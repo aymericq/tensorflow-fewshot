@@ -170,7 +170,7 @@ class MAMLTest(TestCase):
             [2],
             [3],
         ], dtype=np.float32)
-        meta_train_y = np.array([1, 2, 3])
+        meta_train_y = np.array([1, -1, 7])
 
         def task_generator():
             for i in range(3):

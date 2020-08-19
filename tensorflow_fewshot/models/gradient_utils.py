@@ -65,4 +65,5 @@ def update_weights(alpha, grads, model, updated_model):
 
 
 def _extract_var_name(var):
+    # variable names are in the format `layer_name/var_name:device_id`
     return var.name.split(':')[0].split('/')[-1]

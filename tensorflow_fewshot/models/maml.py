@@ -75,9 +75,10 @@ class MAML:
                 with tf.GradientTape() as outer_tape:
                     outer_loss = self._compute_task_loss(alpha, updated_model, x_query, x_support, y_query, y_support)
 
-                outer_grads = outer_tape.gradient(outer_loss, self.model.variables, unconnected_gradients='zero')
+                outer_grads = outer_tape.gradient(outer_loss, self.model.variables)
                 for i_grad, grad in enumerate(outer_grads):
-                    epi_grad[i_grad] += grad
+                    if grad is not None:
+                        epi_grad[i_grad] += grad
                 epi_loss += outer_loss
             sgd.apply_gradients(zip(epi_grad, self.model.variables))
 
@@ -93,7 +94,7 @@ class MAML:
         with tf.GradientTape() as inner_tape:
             y_inner = self.model(x_support)
             loss_val = self.loss(y_support, y_inner)
-        inner_grads = inner_tape.gradient(loss_val, self.model.variables, unconnected_gradients='zero')
+        inner_grads = inner_tape.gradient(loss_val, self.model.variables)
         take_one_gradient_step(self.model, updated_model, inner_grads, alpha)
         y_outer = updated_model(x_query)
         outer_loss = self.loss(y_query, y_outer)

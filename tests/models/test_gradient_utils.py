@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential, clone_model
 from tensorflow.python.keras.layers import Dense, Lambda, BatchNormalization
-from tensorflow_fewshot.models.gradient_utils import take_one_gradient_step, take_gradient_step
+from tensorflow_fewshot.models.gradient_utils import take_one_gradient_step, take_n_gradient_step
 
 
 class TestGradientUtils(TestCase):
@@ -112,7 +112,7 @@ class TestGradientUtils(TestCase):
         # When
         n_step = 5
         alpha = 1.0
-        take_gradient_step(model, updated_model, n_step, alpha, tf.keras.losses.mse, x, y, unconnected_gradients='none')
+        take_n_gradient_step(model, updated_model, n_step, alpha, tf.keras.losses.mse, x, y)
 
         # Then
         self.assertIsNotNone(updated_model(x))

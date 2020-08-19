@@ -3,7 +3,7 @@ from typing import Generator, Callable
 import numpy as np
 import tensorflow as tf
 
-from .gradient_utils import take_one_gradient_step
+from .gradient_utils import take_one_gradient_step, take_n_gradient_step
 
 
 class MAML:
@@ -49,6 +49,7 @@ class MAML:
             task_generator: Callable[[], Generator[tuple, None, None]],
             n_episode: int,
             alpha: float = 1e-2,
+            n_step: int = 1,
             learning_rate: float = 1e-3,
             episode_end_callback=None,
             clip_gradient=None
@@ -60,6 +61,7 @@ class MAML:
                 (support_set, query_set), themselves being a tuple (data, label).
             n_episode (int): the number of episodes tu run.
             alpha (float): learning rate of the inner_loop
+            n_step (int): number of gradient steps taken in the inner loop
             learning_rate (float): learning rate of the outer loop
             episode_end_callback (function): a function called at the end of each episode.
             clip_gradient : gradient extremum values
@@ -73,7 +75,9 @@ class MAML:
                 x_support, y_support = support_set
                 x_query, y_query = query_set
                 with tf.GradientTape() as outer_tape:
-                    outer_loss = self._compute_task_loss(alpha, updated_model, x_query, x_support, y_query, y_support)
+                    # Computes inner loop updates and outer loss over the query set
+                    outer_loss = self._compute_task_loss(updated_model, alpha, n_step, x_support, y_support, x_query,
+                                                         y_query)
 
                 outer_grads = outer_tape.gradient(outer_loss, self.model.variables)
                 for i_grad, grad in enumerate(outer_grads):
@@ -90,12 +94,8 @@ class MAML:
                 }
                 episode_end_callback(**kwargs)
 
-    def _compute_task_loss(self, alpha, updated_model, x_query, x_support, y_query, y_support):
-        with tf.GradientTape() as inner_tape:
-            y_inner = self.model(x_support)
-            loss_val = self.loss(y_support, y_inner)
-        inner_grads = inner_tape.gradient(loss_val, self.model.variables)
-        take_one_gradient_step(self.model, updated_model, inner_grads, alpha)
+    def _compute_task_loss(self, updated_model, alpha, n_step, x_support, y_support, x_query, y_query):
+        take_n_gradient_step(self.model, updated_model, n_step, alpha, self.loss, x_support, y_support)
         y_outer = updated_model(x_query)
         outer_loss = self.loss(y_query, y_outer)
         return outer_loss

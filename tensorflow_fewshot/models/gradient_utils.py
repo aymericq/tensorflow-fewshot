@@ -17,7 +17,7 @@ def take_one_gradient_step(model: Model, cloned_model: Model, grads: list, alpha
     updated_weights = model.get_weights()
     for i in range(len(updated_weights)):
         if grads[i] is not None:
-            updated_weights[i] -= alpha*grads[i]
+            updated_weights[i] -= alpha * grads[i]
     cloned_model.set_weights(updated_weights)
 
     k = 0
@@ -26,16 +26,17 @@ def take_one_gradient_step(model: Model, cloned_model: Model, grads: list, alpha
             weight_name = _extract_var_name(var)
             # Check if it is a connected gradient ie a trainable var
             if grads[k] is not None:
-                cloned_model.layers[j].__dict__[weight_name] = tf.subtract(model.layers[j].__dict__[weight_name], alpha * grads[k])
+                cloned_model.layers[j].__dict__[weight_name] = tf.subtract(model.layers[j].__dict__[weight_name],
+                                                                           alpha * grads[k])
             k += 1
 
 
-def take_gradient_step(model, updated_model, n_step, alpha, loss, data_x, data_y, unconnected_gradients='none'):
-    grads = compute_grads_n_step(model, updated_model, n_step, alpha, loss, data_x, data_y)
-    update_weights(alpha, grads, model, updated_model)
+def take_n_gradient_step(model, updated_model, n_step, alpha, loss, data_x, data_y):
+    grads = _compute_n_step_grads(model, updated_model, n_step, alpha, loss, data_x, data_y)
+    _update_weights(alpha, grads, model, updated_model, first_update=(n_step == 1))
 
 
-def compute_grads_n_step(model, updated_model, n_step, alpha, loss, data_x, data_y, unconnected_gradients='none'):
+def _compute_n_step_grads(model, updated_model, n_step, alpha, loss, data_x, data_y, unconnected_gradients='none'):
     if n_step == 1:
         with tf.GradientTape() as tape:
             preds = model(data_x)
@@ -44,21 +45,26 @@ def compute_grads_n_step(model, updated_model, n_step, alpha, loss, data_x, data
         return grads
     else:
         with tf.GradientTape() as tape:
-            grads = compute_grads_n_step(model, updated_model, n_step-1, alpha, loss, data_x, data_y)
-            update_weights(alpha, grads, model, updated_model)
+            grads = _compute_n_step_grads(model, updated_model, n_step - 1, alpha, loss, data_x, data_y)
+            _update_weights(alpha, grads, model, updated_model, first_update=(n_step == 2))
             preds = updated_model(data_x)
             loss_val = loss(data_y, preds)
         grads = tape.gradient(loss_val, model.variables, unconnected_gradients=unconnected_gradients)
         return grads
 
-def update_weights(alpha, grads, model, updated_model):
+
+def _update_weights(alpha, grads, model, updated_model, first_update):
     k = 0
-    for j in range(len(updated_model.layers)):
-        for var in updated_model.layers[j].variables:
+    for j in range(len(model.layers)):
+        for var in model.layers[j].variables:
             weight_name = _extract_var_name(var)
             if weight_name in [_extract_var_name(var1) for var1 in model.layers[j].trainable_variables]:
                 updated_model.layers[j].__dict__[weight_name] = tf.subtract(
-                    updated_model.layers[j].__dict__[weight_name],
+                    (
+                        model.layers[j].__dict__[weight_name]
+                        if first_update
+                        else updated_model.layers[j].__dict__[weight_name]
+                    ),
                     alpha * grads[k]
                 )
             k += 1

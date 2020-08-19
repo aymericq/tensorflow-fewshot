@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential, clone_model
 from tensorflow.python.keras.layers import Dense, Lambda, BatchNormalization
-from tensorflow_fewshot.models.gradient_utils import take_one_gradient_step
+from tensorflow_fewshot.models.gradient_utils import take_one_gradient_step, take_gradient_step
 
 
 class TestGradientUtils(TestCase):
@@ -90,13 +90,33 @@ class TestGradientUtils(TestCase):
             preds = model(x)
         grads = tape.gradient(preds, model.variables, unconnected_gradients='zero')
 
+        updated_model = clone_model(model)
+        take_one_gradient_step(model, updated_model, grads, alpha=1.0)
+
         # Then
         np.testing.assert_equal(grads[4], np.zeros(initial_weights[2].shape))  # Moving mean
         np.testing.assert_equal(grads[5], np.zeros(initial_weights[3].shape))  # Moving Variance
-        updated_model = clone_model(model)
-        take_one_gradient_step(model, updated_model, grads, alpha=1.0)
         np.testing.assert_equal(initial_weights[4], updated_model.get_weights()[4])
         np.testing.assert_equal(initial_weights[5], updated_model.get_weights()[5])
+
+    def test_take_5_gradient_steps(self):
+        # Given
+        model = Sequential([
+            tf.keras.layers.Input((1,)),
+            Dense(1, use_bias=False, kernel_initializer='ones'),
+        ])
+        updated_model = clone_model(model)
+        x = np.array([[1]])
+        y = np.array([[4]])
+
+        # When
+        n_step = 5
+        alpha = 1.0
+        take_gradient_step(model, updated_model, n_step, alpha, tf.keras.losses.mse, x, y, unconnected_gradients='none')
+
+        # Then
+        self.assertIsNotNone(updated_model(x))
+
 
     # TODO: test on different layers and models: convnets, batchnorm, conv2d, pooling, etc.
 

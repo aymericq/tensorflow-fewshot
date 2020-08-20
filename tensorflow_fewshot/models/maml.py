@@ -3,7 +3,7 @@ from typing import Generator, Callable
 import numpy as np
 import tensorflow as tf
 
-from .gradient_utils import take_one_gradient_step, take_n_gradient_step
+from .gradient_utils import take_n_gradient_step
 
 
 class MAML:
@@ -20,7 +20,7 @@ class MAML:
         self.model = model
         self.loss = loss
 
-    def fit(self, data_x, data_y, alpha=1):
+    def fit(self, data_x, data_y, alpha=1, n_step=1):
         """Fits the model to the given (possibly few-shot) data.
 
         It does not updates the internal model, but rather returns an updated model that is not kept in the internal
@@ -34,14 +34,9 @@ class MAML:
         Returns:
             updated_model (Model): a fitted Keras model.
         """
-        with tf.GradientTape() as tape:
-            preds = self.model(data_x)
-            loss_value = self.loss(data_y, preds)
-
-        grads = tape.gradient(loss_value, self.model.weights, unconnected_gradients='zero')
         if self.eval_model is None:
             self.eval_model = tf.keras.models.clone_model(self.model)
-        take_one_gradient_step(self.model, self.eval_model, grads, alpha)
+        take_n_gradient_step(self.model, self.eval_model, n_step, alpha, self.loss, data_x, data_y)
         return self.eval_model
 
     def meta_train(

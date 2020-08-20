@@ -56,7 +56,7 @@ class MAMLTest(TestCase):
 
         # When
         eval_model = maml.fit(data_x, data_y)
-        weight_set = eval_model.get_weights()
+        weight_set = [layer.kernel for layer in eval_model.layers]
 
         # Then
         for i_weight, weights in enumerate(weight_set):
@@ -78,7 +78,7 @@ class MAMLTest(TestCase):
 
         # When
         eval_model = maml.fit(data_x, data_y, alpha=0.5)
-        weight_set = eval_model.get_weights()
+        weight_set = [layer.kernel for layer in eval_model.layers]
 
         # Then
         for i_weight, weights in enumerate(weight_set):
@@ -100,7 +100,7 @@ class MAMLTest(TestCase):
 
         # When
         eval_model = maml.fit(data_x, data_y)
-        weight_set = eval_model.get_weights()
+        weight_set = [layer.kernel for layer in eval_model.layers]
 
         # Then
         for i_weight, weights in enumerate(weight_set):
@@ -122,7 +122,7 @@ class MAMLTest(TestCase):
 
         # When
         eval_model = maml.fit(data_x, data_y)
-        weight_set = eval_model.get_weights()
+        weight_set = [layer.kernel for layer in eval_model.layers]
 
         # Then
         for i_weight, weights in enumerate(weight_set):

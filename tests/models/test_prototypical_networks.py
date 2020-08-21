@@ -79,9 +79,9 @@ class TestProtonet(unittest.TestCase):
         # Given
         encoder = create_imageNetCNN(input_shape=(28, 28, 1))
         meta_train_x = np.ones((2, 28, 28, 1))
-        meta_train_y = np.array((1, 2))
+        meta_train_y = np.zeros((2,))
         train_x = np.zeros((2, 28, 28, 1))
-        train_y = np.array((2, 1))
+        train_y = np.zeros((2,))
 
         def task_generator():
             support_set = meta_train_x, meta_train_y
@@ -102,7 +102,7 @@ class TestProtonet(unittest.TestCase):
         # Given
         encoder = create_imageNetCNN(input_shape=(28, 28, 1))
         meta_train_x = np.ones((2, 28, 28, 1))
-        meta_train_y = np.array((1, 2))
+        meta_train_y = np.zeros((2,))
 
         def task_generator():
             support_set = meta_train_x, meta_train_y
@@ -137,9 +137,9 @@ class TestProtonet(unittest.TestCase):
         ])
         model = pn.PrototypicalNetwork(encoder)
         meta_train_x = np.ones((2, 2, 2, 1))
-        meta_train_y = np.array((1, 2))
+        meta_train_y = np.zeros((2,))
         train_x = np.zeros((2, 2, 2, 1))
-        train_y = np.array((2, 1))
+        train_y = np.zeros((2,))
 
         def task_generator():
             support_set = meta_train_x, meta_train_y

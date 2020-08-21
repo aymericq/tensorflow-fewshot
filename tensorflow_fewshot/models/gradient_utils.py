@@ -9,9 +9,6 @@ def take_one_gradient_step(model: Model, cloned_model: Model, grads: list, alpha
         model (Model): the model on which gradients were computed and which weights are to be updated
         grads (list): a list of numpy array, in the same order that model.get_weights provides.
         alpha (float): the magnitude of the gradient step
-
-    Returns:
-        cloned_model (Model): a cloned model of `model` with updated weights.
     """
 
     updated_weights = model.get_weights()

@@ -1,7 +1,9 @@
+from typing import Callable, Generator
+
 import tensorflow as tf
 import numpy as np
 
-from .utils import euclidean_distance, create_imageNetCNN
+from .utils import euclidean_distance
 
 
 class PrototypicalNetwork:
@@ -31,20 +33,19 @@ class PrototypicalNetwork:
 
     def meta_train(
             self,
-            meta_train_X,
-            meta_train_Y,
-            n_episode=8000,
-            n_way=60,
-            ks_shots=5,
-            kq_shots=5,
+            task_generator: Callable[[], Generator[tuple, None, None]],
+            n_episode: int,
+            n_way: int,
+            ks_shots: int,
+            kq_shots: int,
             optimizer='Adam',
             episode_end_callback=None
     ):
         """Trains the model on the meta-training set.
 
         Args:
-            meta_train_X (numpy.array): The data set used for meta-training.
-            meta_train_Y (numpy.array): The corresponding set of labels, must be a single dimension array of integers
+            task_generator (callable): A callable returning a generator of few_shot tasks. Each task should be a couple
+                (support_set, query_set), themselves being a tuple (data, label).
             n_episode (int): Number of episodes for meta-training.
             n_way (int): Number of ways (or classes per episode).
             ks_shots (int): Number of image per class in the support set.
@@ -59,19 +60,26 @@ class PrototypicalNetwork:
             # Open a GradientTape to record the operations run
             # during the forward pass, which enables autodifferentiation.
             with tf.GradientTape() as tape:
+                support_set, query_set = task_generator().__next__()
 
                 # Run the forward pass of the layer.
                 # The operations that the layer applies
                 # to its inputs are going to be recorded
                 # on the GradientTape.
-                distrib = tf.transpose(
-                    run_episode(meta_train_X, meta_train_Y, n_way, ks_shots, kq_shots, self.encoder)
+                distrib, support_labels, query_labels = run_episode(
+                    support_set,
+                    query_set,
+                    n_way,
+                    ks_shots,
+                    kq_shots,
+                    self.encoder
                 )
+                distrib = tf.transpose(distrib)
 
                 # Compute the loss value for this episode.
                 labels = np.array([[i] * kq_shots for i in range(n_way)]).flatten()
 
-                loss_value = _compute_loss(distrib, labels, n_way)
+                loss_value = _compute_loss(distrib, query_labels, n_way)
 
             # Use the gradient tape to automatically retrieve
             # the gradients of the trainable variables with respect to the loss.
@@ -110,49 +118,49 @@ class PrototypicalNetwork:
         self.encoder.compile(optimizer)
         return lr_schedule, optimizer
 
-    def fit(self, train_X, train_Y):
+    def fit(self, train_x, train_y):
         """Fits the model to the data.
 
         Computes the prototype of each class and the internal mapping between prototype index
         and label.
 
         Args:
-            train_X (numpy.array): An array containing training data, of shape [nb_samples, [model_input_shape]].
-            train_Y (numpy.array): The corresponding labels, a 1-dimensional array of integers.
+            train_x (numpy.array): An array containing training data, of shape [nb_samples, [model_input_shape]].
+            train_y (numpy.array): The corresponding labels, a 1-dimensional array of integers.
         """
-        n_labels = len(np.unique(train_Y))
+        n_labels = len(np.unique(train_y))
         prototypes = np.zeros((n_labels, self.output_dim)).astype(np.float32)
 
         self._proto_index_to_label = np.zeros((n_labels,)).astype(np.int32)
 
         self._label_to_train_indices = {
-            ind: np.argwhere(train_Y.flatten() == ind).flatten()
-            for ind in np.unique(train_Y)
+            ind: np.argwhere(train_y.flatten() == ind).flatten()
+            for ind in np.unique(train_y)
         }
 
-        for i, label in enumerate(np.unique(train_Y)):
+        for i, label in enumerate(np.unique(train_y)):
             prototypes[i, :] = tf.reduce_mean(
-                self.encoder(train_X[self._label_to_train_indices[label], :, :, :]),
+                self.encoder(train_x[self._label_to_train_indices[label], :, :, :]),
                 axis=0
             )
             self._proto_index_to_label[i] = label
 
         self.prototypes = prototypes
 
-    def predict(self, X):
+    def predict(self, x):
         """Makes predictions and return the inferred labels.
 
         Args:
-            X (numpy.array): An array containing the data to label, of shape [nb_samples, [model_input_shape]].
+            x (numpy.array): An array containing the data to label, of shape [nb_samples, [model_input_shape]].
 
         Returns:
             preds (numpy.array): The predicted label for each data point, a 1-dimensional array of integers.
         """
-        dists = euclidean_distance(self.prototypes, self.encoder(X).numpy())
+        dists = euclidean_distance(self.prototypes, self.encoder(x).numpy())
         return self._proto_index_to_label[tf.argmin(dists, axis=0).numpy()]
 
 
-def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
+def run_episode(support_set, query_set, n_way, ks_shots, kq_shots, encoder):
     """ Computes softmax of distances for one sampled episode.
 
     Given a set X of input images, their corresponding labels y, episode
@@ -163,8 +171,8 @@ def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
     each prototype.
 
     Args:
-        episode_X (numpy.array): The dataset to sample images from.
-        episode_y (numpy.array): The corresponding labels.
+        support_set (tuple): couple x_support, y_support, data and corresponding labels
+        query_set (tuple): couple x_query, y_query, data and corresponding labels
         n_way (int): Number of ways (or classes per episode).
         ks_shots (int): Number of image per class in the support set.
         kq_shots (int): Number of image per class in the query set.
@@ -172,21 +180,22 @@ def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
 
     Returns:
         dist (numpy.array): the distance of each query datapoint to each prototype.
+        support_labels (numpy.array): the labels corresponding to the reordering of the support data forwarded through
+            the encoder.
+        query_labels (numpy.array): the labels corresponding to the reordering of the query data forwarded through
+            the encoder.
     """
 
-    # Sample N-way, KS support shots, KS query shots
-    classes = np.random.choice(np.unique(episode_y), n_way)
+    x_support, y_support = support_set
+    x_query, y_query = query_set
 
-    support_indices = np.zeros((n_way, ks_shots)).astype(np.int32)
-    query_indices = np.zeros((n_way, kq_shots)).astype(np.int32)
-    for i in range(n_way):
-        indices = np.random.choice(np.argwhere(episode_y == classes[i]).flatten(), ks_shots + kq_shots)
-        support_indices[i, :] = indices[:ks_shots]
-        query_indices[i, :] = indices[ks_shots:]
+    # Compute sorted indices of labels in order to group embeddings by label and compute their mean accordingly
+    i_sorted_support = np.argsort(y_support)
+    i_sorted_query = np.argsort(y_query)
 
     # Forward support into encoder
     support_embeddings = tf.reshape(
-        encoder(episode_X[tf.reshape(support_indices, (n_way * ks_shots,)), :, :, :]),
+        encoder(x_support[i_sorted_support, :, :, :]),
         (n_way, ks_shots, -1)
     )
 
@@ -195,15 +204,14 @@ def run_episode(episode_X, episode_y, n_way, ks_shots, kq_shots, encoder):
 
     # Forward pass on query set
     query_embeddings = tf.reshape(
-        encoder(episode_X[tf.reshape(query_indices, (n_way * kq_shots,)), :, :, :]),
+        encoder(x_query[i_sorted_query, :, :, :]),
         (n_way * kq_shots, -1)
     )
 
     # Compute distances, log of opposite softmax
     distances = euclidean_distance(prototypes, query_embeddings)
 
-    # neg_log_dist = distances + tf.math.log(tf.reduce_sum(tf.exp(-distances), 0))
-    return tf.math.softmax(-distances, axis=0)
+    return tf.math.softmax(-distances, axis=0), y_support[i_sorted_support], y_query[i_sorted_query]
 
 
 def _compute_loss(distrib, labels, n_way):

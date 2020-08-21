@@ -52,7 +52,7 @@ class MAML:
         """Meta-trains the model according to MAML algorithm.
 
         Args:
-            task_generator (generator): A generator of few_shot tasks. Each task should be a couple
+            task_generator (callable): A callable returning a generator of few_shot tasks. Each task should be a couple
                 (support_set, query_set), themselves being a tuple (data, label).
             n_episode (int): the number of episodes tu run.
             alpha (float): learning rate of the inner_loop

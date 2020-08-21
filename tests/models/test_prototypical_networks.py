@@ -78,36 +78,50 @@ class TestProtonet(unittest.TestCase):
     def test_model_doesnt_break_on_full_use_cycle(self):
         # Given
         encoder = create_imageNetCNN(input_shape=(28, 28, 1))
-        meta_train_X = np.ones((2, 28, 28, 1))
-        meta_train_Y = np.array((1, 2))
-        train_X = np.zeros((2, 28, 28, 1))
-        train_Y = np.array((2, 1))
+        meta_train_x = np.ones((2, 28, 28, 1))
+        meta_train_y = np.array((1, 2))
+        train_x = np.zeros((2, 28, 28, 1))
+        train_y = np.array((2, 1))
+
+        def task_generator():
+            support_set = meta_train_x, meta_train_y
+            query_set = meta_train_x, meta_train_y
+            yield support_set, query_set
 
         model = pn.PrototypicalNetwork(encoder=encoder)
 
         # When
-        model.meta_train(meta_train_X, meta_train_Y, n_episode=2, n_way=2)
-        model.fit(train_X, train_Y)
+        model.meta_train(task_generator, n_episode=2, n_way=2, ks_shots=1, kq_shots=1)
+        model.fit(train_x, train_y)
         preds = model.predict(normal(size=(3, 28, 28, 1)))
 
         # Then
         assert preds.shape == (3,)
 
-
     def test_meta_train_calls_callback(self):
         # Given
         encoder = create_imageNetCNN(input_shape=(28, 28, 1))
-        meta_train_X = np.ones((2, 28, 28, 1))
-        meta_train_Y = np.array((1, 2))
-        train_X = np.zeros((2, 28, 28, 1))
-        train_Y = np.array((2, 1))
+        meta_train_x = np.ones((2, 28, 28, 1))
+        meta_train_y = np.array((1, 2))
+
+        def task_generator():
+            support_set = meta_train_x, meta_train_y
+            query_set = meta_train_x, meta_train_y
+            yield support_set, query_set
 
         model = pn.PrototypicalNetwork(encoder=encoder)
         expected_callback_arguments = ['episode_loss', 'episode_gradients']
 
         # When
         mock_callback = Mock()
-        model.meta_train(meta_train_X, meta_train_Y, n_episode=4, n_way=2, episode_end_callback=mock_callback)
+        model.meta_train(
+            task_generator,
+            n_episode=4,
+            n_way=2,
+            ks_shots=1,
+            kq_shots=1,
+            episode_end_callback=mock_callback
+        )
 
         # Then
         self.assertEqual(mock_callback.call_count, 4)
@@ -122,22 +136,23 @@ class TestProtonet(unittest.TestCase):
             tf.keras.layers.Flatten()
         ])
         model = pn.PrototypicalNetwork(encoder)
-        meta_train_X = np.ones((2, 2, 2, 1))
-        meta_train_Y = np.array((1, 2))
-        train_X = np.zeros((2, 2, 2, 1))
-        train_Y = np.array((2, 1))
+        meta_train_x = np.ones((2, 2, 2, 1))
+        meta_train_y = np.array((1, 2))
+        train_x = np.zeros((2, 2, 2, 1))
+        train_y = np.array((2, 1))
+
+        def task_generator():
+            support_set = meta_train_x, meta_train_y
+            query_set = meta_train_x, meta_train_y
+            yield support_set, query_set
 
         # When
-        model.meta_train(meta_train_X, meta_train_Y, n_episode=2, n_way=2)
-        model.fit(train_X, train_Y)
+        model.meta_train(task_generator, n_episode=2, n_way=2, ks_shots=1, kq_shots=1)
+        model.fit(train_x, train_y)
         preds = model.predict(normal(size=(3, 2, 2, 1)))
 
         # Then
         assert preds.shape == (3,)
-
-    def test_model_raises_error_when_called_with_invalid_encoder(self):
-        with self.assertRaises(TypeError):
-            model = pn.PrototypicalNetwork("test")
 
     def test_model_raises_error_if_model_is_not_built(self):
         # Given

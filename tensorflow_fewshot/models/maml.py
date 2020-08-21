@@ -45,9 +45,8 @@ class MAML:
             n_episode: int,
             alpha: float = 1e-2,
             n_step: int = 1,
-            learning_rate: float = 1e-3,
-            episode_end_callback=None,
-            clip_gradient=None
+            optimizer: tf.keras.optimizers.Optimizer = tf.keras.optimizers.Adam(),
+            episode_end_callback=None
     ):
         """Meta-trains the model according to MAML algorithm.
 
@@ -55,13 +54,11 @@ class MAML:
             task_generator (callable): A callable returning a generator of few_shot tasks. Each task should be a couple
                 (support_set, query_set), themselves being a tuple (data, label).
             n_episode (int): the number of episodes tu run.
-            alpha (float): learning rate of the inner_loop
-            n_step (int): number of gradient steps taken in the inner loop
-            learning_rate (float): learning rate of the outer loop
+            alpha (float): learning rate of the inner_loop.
+            n_step (int): number of gradient steps taken in the inner loop.
+            optimizer (Optimizer): A Keras optimizer (optionally with gradient clipping).
             episode_end_callback (function): a function called at the end of each episode.
-            clip_gradient : gradient extremum values
         """
-        sgd = tf.keras.optimizers.SGD(learning_rate=learning_rate, clipvalue=clip_gradient)
         updated_model = tf.keras.models.clone_model(self.model)
         for i_epi in range(n_episode):
             epi_grad = [np.zeros(weight.shape) for weight in self.model.get_weights()]
@@ -79,7 +76,7 @@ class MAML:
                     if grad is not None:
                         epi_grad[i_grad] += grad
                 epi_loss += outer_loss
-            sgd.apply_gradients(zip(epi_grad, self.model.variables))
+            optimizer.apply_gradients(zip(epi_grad, self.model.variables))
 
             if episode_end_callback is not None:
                 kwargs = {

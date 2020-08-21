@@ -155,7 +155,8 @@ class MAMLTest(TestCase):
                 yield support_set, query_set
 
         # When
-        maml.meta_train(task_generator, n_episode=1, alpha=1.0, learning_rate=1.0)
+        optimizer = tf.keras.optimizers.SGD(1.0)
+        maml.meta_train(task_generator, n_episode=1, alpha=1.0, optimizer=optimizer)
         preds = maml.model(eval_x)
 
         # Then

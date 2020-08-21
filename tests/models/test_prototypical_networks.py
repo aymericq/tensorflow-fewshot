@@ -91,7 +91,14 @@ class TestProtonet(unittest.TestCase):
         model = pn.PrototypicalNetwork(encoder=encoder)
 
         # When
-        model.meta_train(task_generator, n_episode=2, n_way=2, ks_shots=1, kq_shots=1)
+        model.meta_train(
+            task_generator,
+            n_episode=2,
+            n_way=2,
+            ks_shots=1,
+            kq_shots=1,
+            optimizer=tf.keras.optimizers.Adam()
+        )
         model.fit(train_x, train_y)
         preds = model.predict(normal(size=(3, 28, 28, 1)))
 
@@ -120,6 +127,7 @@ class TestProtonet(unittest.TestCase):
             n_way=2,
             ks_shots=1,
             kq_shots=1,
+            optimizer=tf.keras.optimizers.Adam(),
             episode_end_callback=mock_callback
         )
 
@@ -147,7 +155,14 @@ class TestProtonet(unittest.TestCase):
             yield support_set, query_set
 
         # When
-        model.meta_train(task_generator, n_episode=2, n_way=2, ks_shots=1, kq_shots=1)
+        model.meta_train(
+            task_generator,
+            n_episode=2,
+            n_way=2,
+            ks_shots=1,
+            kq_shots=1,
+            optimizer=tf.keras.optimizers.Adam()
+        )
         model.fit(train_x, train_y)
         preds = model.predict(normal(size=(3, 2, 2, 1)))
 

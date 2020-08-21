@@ -38,7 +38,7 @@ class PrototypicalNetwork:
             n_way: int,
             ks_shots: int,
             kq_shots: int,
-            optimizer='Adam',
+            optimizer: tf.keras.optimizers.Optimizer,
             episode_end_callback=None
     ):
         """Trains the model on the meta-training set.
@@ -50,11 +50,11 @@ class PrototypicalNetwork:
             n_way (int): Number of ways (or classes per episode).
             ks_shots (int): Number of image per class in the support set.
             kq_shots (int): Number of image per class in the query set.
-            optimizer (tf.keras.optimizer): A valid Keras optimizer for training.
+            optimizer (tf.keras.optimizer): A Keras optimizer for training.
             episode_end_callback (Callable): callback called at the end of each episode.
         """
 
-        lr_schedule, optimizer = self._prepare_optimizer(n_episode, optimizer)
+        self.encoder.compile(optimizer)
 
         for episode in range(n_episode):
             # Open a GradientTape to record the operations run
@@ -76,9 +76,6 @@ class PrototypicalNetwork:
                 )
                 distrib = tf.transpose(distrib)
 
-                # Compute the loss value for this episode.
-                labels = np.array([[i] * kq_shots for i in range(n_way)]).flatten()
-
                 loss_value = _compute_loss(distrib, query_labels, n_way)
 
             # Use the gradient tape to automatically retrieve
@@ -95,28 +92,6 @@ class PrototypicalNetwork:
                     'episode_gradients': grads
                 }
                 episode_end_callback(**args)
-
-    def _prepare_optimizer(self, n_episode, optimizer):
-        """Compiles the model.
-
-        Builds the optimizer and the learning schedule according to the number of episodes, then compiles the model.
-        """
-        if optimizer == 'Adam':
-            if n_episode > 2000:
-                # boundaries == [2000, 4000, ..., nb_episodes]
-                boundaries = [2000 * i for i in range(1, n_episode // 2000 + 1)]
-                # values == [1e-3, .5e-3, 1e-4, ...]
-                values = [1e-3 / 2 ** i for i in range(n_episode // 2000 + 1)]
-                lr_schedule = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-                    boundaries, values)
-            else:
-                lr_schedule = 1e-3
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
-        else:
-            raise NotImplementedError
-
-        self.encoder.compile(optimizer)
-        return lr_schedule, optimizer
 
     def fit(self, train_x, train_y):
         """Fits the model to the data.

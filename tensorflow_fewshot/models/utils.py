@@ -22,7 +22,10 @@ def euclidean_distance(prototypes, embeddings):
 
 
 def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64, use_dense_head=False, output_dim=None):
-    """Creates a Keras Sequential Model as described in Matching Nets paper (Vinyals et al., 2016).
+    """Creates a Keras Sequential Model as described in `Matching Networks for One-Shot Learning`.
+
+    Vinyals et al. proposed a model in their 2016 paper `Matching Networks for One-Shot Learning` that serves as
+    a baseline model for a lot of papers in the field of few-shot learning.
 
     Args:
         input_shape (int tuple): the shape of inputs passed to the model, usually (im_width, im_height, nb_channel).

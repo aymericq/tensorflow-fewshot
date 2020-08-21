@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.models import Sequential, clone_model
 from tensorflow.python.keras.layers import Dense, Lambda, BatchNormalization
-from tensorflow_fewshot.models.gradient_utils import take_n_gradient_step
+from tensorflow_fewshot.models.fast_gradients import take_n_gradient_step
 
 
 class TestGradientUtils(TestCase):

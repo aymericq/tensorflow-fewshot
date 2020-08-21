@@ -3,7 +3,7 @@ from typing import Generator, Callable
 import numpy as np
 import tensorflow as tf
 
-from .gradient_utils import take_n_gradient_step
+from .fast_gradients import take_n_gradient_step
 
 
 class MAML:

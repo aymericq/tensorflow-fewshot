@@ -46,7 +46,8 @@ class MAML:
             alpha: float = 1e-2,
             n_step: int = 1,
             optimizer: tf.keras.optimizers.Optimizer = tf.keras.optimizers.Adam(),
-            episode_end_callback=None
+            episode_end_callback=None,
+            clipvalue=None
     ):
         """Meta-trains the model according to MAML algorithm.
 
@@ -69,7 +70,7 @@ class MAML:
                 with tf.GradientTape() as outer_tape:
                     # Computes inner loop updates and outer loss over the query set
                     outer_loss = self._compute_task_loss(updated_model, alpha, n_step, x_support, y_support, x_query,
-                                                         y_query)
+                                                         y_query, clipvalue)
 
                 outer_grads = outer_tape.gradient(outer_loss, self.model.variables)
                 for i_grad, grad in enumerate(outer_grads):
@@ -86,8 +87,8 @@ class MAML:
                 }
                 episode_end_callback(**kwargs)
 
-    def _compute_task_loss(self, updated_model, alpha, n_step, x_support, y_support, x_query, y_query):
-        take_n_gradient_step(self.model, updated_model, n_step, alpha, self.loss, x_support, y_support)
+    def _compute_task_loss(self, updated_model, alpha, n_step, x_support, y_support, x_query, y_query, clipvalue):
+        take_n_gradient_step(self.model, updated_model, n_step, alpha, self.loss, x_support, y_support, clipvalue)
         y_outer = updated_model(x_query)
         outer_loss = self.loss(y_query, y_outer)
         return outer_loss

@@ -1,6 +1,6 @@
 import tracemalloc
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from tensorflow_fewshot.models.maml import MAML
 import tensorflow as tf
@@ -280,3 +280,46 @@ class MAMLTest(TestCase):
 
         # Then
         self.assertLess(current_mem_ten_ep, 1.2 * current_mem_one_ep)
+
+    def test_multistep_model_doesnt_diverge(self):
+        # Given
+        def sine(n_task=5):
+            for _ in range(n_task):
+                x = np.random.uniform(-5, 5, size=(20, 1))
+                a = np.random.uniform(0.1, 5)
+                p = np.random.uniform(0, np.pi)
+                y = a * np.sin(x + p)
+                support = x[:10], y[:10]
+                query = x[10:], y[10:]
+                yield support, query
+
+        encoder = tf.keras.models.Sequential([
+            tf.keras.layers.Input((1,)),
+            tf.keras.layers.Dense(1),
+            tf.keras.layers.Dense(40, activation='relu'),
+            tf.keras.layers.Dense(40, activation='relu'),
+            tf.keras.layers.Dense(1),
+        ])
+
+        model = MAML(encoder, tf.keras.losses.mse)
+
+        mock_callback = MagicMock()
+
+        def train():
+            model.meta_train(
+                sine,
+                n_episode=2,
+                alpha=0.01,
+                n_step=5,
+                optimizer=tf.keras.optimizers.Adam(1e-3, clipvalue=1.0),
+                episode_end_callback=mock_callback,
+                clipvalue=1
+            )
+
+        # When
+        train()
+
+        # Then
+        episode_loss = np.mean(mock_callback.call_args_list[-1][-1]['episode_loss'].numpy())
+        self.assertFalse(np.isinf(episode_loss))
+        self.assertFalse(np.isnan(episode_loss))

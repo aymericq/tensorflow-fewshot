@@ -88,6 +88,7 @@ class PrototypicalNetwork:
 
             if episode_end_callback is not None:
                 args = {
+                    'episode': episode,
                     'episode_loss': loss_value,
                     'episode_gradients': grads
                 }

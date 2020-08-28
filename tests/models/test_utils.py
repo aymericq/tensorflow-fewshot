@@ -2,10 +2,15 @@ import unittest
 from numpy.random import normal
 import numpy as np
 from tensorflow_fewshot.models.utils import euclidean_distance, create_imageNetCNN
+import tensorflow as tf
 
 
 # Given
 class TestUtils(unittest.TestCase):
+
+    def setUp(self):
+        np.random.seed(37)
+        tf.random.set_seed(37)
 
     def test_l2_norm_shape_is_10_5_when_passed_10_prototypes_10_embeddings(self):
         prototypes = normal(size=(5, 64))

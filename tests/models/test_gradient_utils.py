@@ -9,6 +9,10 @@ from tensorflow_fewshot.models.fast_gradients import take_n_gradient_step
 
 class TestGradientUtils(TestCase):
 
+    def setUp(self):
+        np.random.seed(37)
+        tf.random.set_seed(37)
+
     def test_update_weights_creates_model_with_right_weights(self):
         # Given
         initial_model = create_2_layer_MLP()

@@ -29,6 +29,10 @@ def create_squared_perceptron():
 
 class MAMLTest(TestCase):
 
+    def setUp(self):
+        np.random.seed(37)
+        tf.random.set_seed(37)
+
     def test_instantiate_MAML(self):
         # Given
         model = tf.keras.models.Sequential()

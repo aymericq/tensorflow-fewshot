@@ -43,7 +43,7 @@ def _compute_n_step_grads(model, updated_model, n_step, alpha, loss, data_x, dat
         return grads
     else:
         with tf.GradientTape() as tape:
-            grads = _compute_n_step_grads(model, updated_model, n_step - 1, alpha, loss, data_x, data_y)
+            grads = _compute_n_step_grads(model, updated_model, n_step - 1, alpha, loss, data_x, data_y, clipvalue=clipvalue)
             _update_weights(alpha, grads, model, updated_model, first_update=(n_step == 2), clipvalue=clipvalue)
             preds = updated_model(data_x)
             loss_val = loss(data_y, preds)
@@ -57,7 +57,7 @@ def _update_weights(alpha, grads, model, updated_model, first_update, clipvalue=
         for var in model.layers[j].variables:
             weight_name = _extract_var_name(var)
             if weight_name in [_extract_var_name(var1) for var1 in model.layers[j].trainable_variables]:
-                grad = clip(grads[k], -clipvalue, clipvalue) if clipvalue is not None else grads[k]
+                grad = tf.clip_by_value(grads[k], -clipvalue, clipvalue) if clipvalue is not None else grads[k]
                 updated_model.layers[j].__dict__[weight_name] = tf.subtract(
                     (
                         model.layers[j].__dict__[weight_name]

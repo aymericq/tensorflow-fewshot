@@ -18,6 +18,9 @@ class TestProtonet(unittest.TestCase):
             tf.keras.layers.Flatten()
         ])
 
+        np.random.seed(37)
+        tf.random.set_seed(37)
+
         self.encoder(normal(size=(2, 2, 2, 1)))
 
     def test_prototypes_creation_when_calling_fit(self):

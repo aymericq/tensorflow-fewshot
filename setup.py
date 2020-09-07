@@ -13,6 +13,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/aymericq/tensorflow-fewshot",
     packages=setuptools.find_packages(),
+    install_requires=[
+        "numpy>=1.19.1",
+        "tensorflow>=2.2.0",
+        "matplotlib>=3.3.0"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

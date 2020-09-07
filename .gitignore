@@ -5,3 +5,7 @@
 *.ipynb
 **/examples/*/
 docs/build
+dist/
+build/
+tensorflow_fewshot.egg-info/
+*.pyc

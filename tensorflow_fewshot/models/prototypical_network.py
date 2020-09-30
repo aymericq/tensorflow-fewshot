@@ -17,7 +17,7 @@ class PrototypicalNetwork:
 
     def __init__(
             self,
-            encoder
+            encoder: tf.keras.Model
     ):
         if not isinstance(encoder, tf.keras.models.Model):
             raise TypeError("Encoder must be an instance of keras.models.Model .")

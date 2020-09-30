@@ -20,23 +20,25 @@ class MAML:
         self.model = model
         self.loss = loss
 
-    def fit(self, data_x, data_y, alpha=1, n_step=1):
+    def fit(self, train_x, train_y, alpha=1, n_step=1) -> tf.keras.Model:
         """Fits the model to the given (possibly few-shot) data.
 
         It does not updates the internal model, but rather returns an updated model that is not kept in the internal
         state of the instance.
 
         Args:
-            data_x (np.array): an array of input data.
-            data_y (np.array): an array of corresponding labels (integers).
+            train_x (np.array): an array of input data.
+            train_y (np.array): an array of corresponding labels (integers).
             alpha (float): the step of the gradient step used to update the model.
+            n_step (int): Number of gradient steps to take during fine-tuning.
+            n_step (int): Number of gradient steps to take during fine-tuning.
 
         Returns:
             updated_model (Model): a fitted Keras model.
         """
         if self.eval_model is None:
             self.eval_model = tf.keras.models.clone_model(self.model)
-        take_n_gradient_step(self.model, self.eval_model, n_step, alpha, self.loss, data_x, data_y)
+        take_n_gradient_step(self.model, self.eval_model, n_step, alpha, self.loss, train_x, train_y)
         return self.eval_model
 
     def meta_train(
@@ -87,7 +89,17 @@ class MAML:
                 }
                 episode_end_callback(**kwargs)
 
-    def _compute_task_loss(self, updated_model, alpha, n_step, x_support, y_support, x_query, y_query, clipvalue):
+    def _compute_task_loss(
+            self,
+            updated_model: tf.keras.Model,
+            alpha: float,
+            n_step: int,
+            x_support: np.array,
+            y_support: np.array,
+            x_query: np.array,
+            y_query: np.array,
+            clipvalue: float
+    ) -> tf.Tensor:
         take_n_gradient_step(self.model, updated_model, n_step, alpha, self.loss, x_support, y_support, clipvalue)
         y_outer = updated_model(x_query)
         outer_loss = self.loss(y_query, y_outer)

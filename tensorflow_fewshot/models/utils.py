@@ -1,8 +1,14 @@
+from typing import Union, Tuple
+
+import numpy
 import tensorflow as tf
 from tensorflow import expand_dims, sqrt, reduce_sum, square
 
 
-def euclidean_distance(prototypes, embeddings):
+def euclidean_distance(
+        prototypes: Union[numpy.array, tf.Tensor],
+        embeddings: Union[numpy.array, tf.Tensor]
+) -> tf.Tensor:
     """Computes the distance of each embedding to each prototype.
 
     Args:
@@ -21,7 +27,13 @@ def euclidean_distance(prototypes, embeddings):
     ))
 
 
-def create_imageNetCNN(input_shape, nb_hidden_layers=4, nb_filters=64, use_dense_head=False, output_dim=None):
+def create_standardized_CNN(
+        input_shape: Tuple[int, ...],
+        nb_hidden_layers: int = 4,
+        nb_filters: int = 64,
+        use_dense_head: bool = False,
+        output_dim: int = None
+) -> tf.keras.models.Sequential:
     """Creates a Keras Sequential Model as described in `Matching Networks for One-Shot Learning`.
 
     Vinyals et al. proposed a model in their 2016 paper `Matching Networks for One-Shot Learning` that serves as

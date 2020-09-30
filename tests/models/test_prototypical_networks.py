@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from tensorflow_fewshot.models.utils import create_imageNetCNN
+from tensorflow_fewshot.models.utils import create_standardized_CNN
 import tensorflow_fewshot.models.prototypical_network as pn
 from numpy.random import normal
 import tensorflow as tf
@@ -80,7 +80,7 @@ class TestProtonet(unittest.TestCase):
 
     def test_model_doesnt_break_on_full_use_cycle(self):
         # Given
-        encoder = create_imageNetCNN(input_shape=(28, 28, 1))
+        encoder = create_standardized_CNN(input_shape=(28, 28, 1))
         meta_train_x = np.ones((2, 28, 28, 1))
         meta_train_y = np.zeros((2,))
         train_x = np.zeros((2, 28, 28, 1))
@@ -110,7 +110,7 @@ class TestProtonet(unittest.TestCase):
 
     def test_meta_train_calls_callback(self):
         # Given
-        encoder = create_imageNetCNN(input_shape=(28, 28, 1))
+        encoder = create_standardized_CNN(input_shape=(28, 28, 1))
         meta_train_x = np.ones((2, 28, 28, 1))
         meta_train_y = np.zeros((2,))
 

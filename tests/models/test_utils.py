@@ -1,7 +1,7 @@
 import unittest
 from numpy.random import normal
 import numpy as np
-from tensorflow_fewshot.models.utils import euclidean_distance, create_imageNetCNN
+from tensorflow_fewshot.models.utils import euclidean_distance, create_standardized_CNN
 import tensorflow as tf
 
 
@@ -47,7 +47,7 @@ class TestUtils(unittest.TestCase):
 
     def test_encoder_output_shape_is_10_64_when_passed_10_images(self):
         # Given
-        encoder = create_imageNetCNN((28, 28, 1))
+        encoder = create_standardized_CNN((28, 28, 1))
         images = normal(size=(10, 28, 28, 1))
 
         # When
@@ -58,7 +58,7 @@ class TestUtils(unittest.TestCase):
 
     def test_output_has_correct_size_when_using_head(self):
         # Given
-        encoder = create_imageNetCNN((28, 28, 1), use_dense_head=True, output_dim=5)
+        encoder = create_standardized_CNN((28, 28, 1), use_dense_head=True, output_dim=5)
         images = normal(size=(10, 28, 28, 1))
 
         # When
@@ -69,4 +69,4 @@ class TestUtils(unittest.TestCase):
 
     def test_raise_error_if_CNN_created_with_head_but_not_size_is_passed(self):
         with self.assertRaises(ValueError):
-            encoder = create_imageNetCNN((28, 28, 1), use_dense_head=True)
+            encoder = create_standardized_CNN((28, 28, 1), use_dense_head=True)

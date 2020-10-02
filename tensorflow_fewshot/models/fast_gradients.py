@@ -1,13 +1,14 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from numpy import clip
 
 
-def take_one_gradient_step(model: Model, cloned_model: Model, grads: list, alpha: float = 1) -> Model:
+def take_one_gradient_step(model: Model, cloned_model: Model, grads: list, alpha: float = 1):
     """Updates both its numerical and trainable weights without breaking the computational graph.
 
     Args:
-        model (Model): the model on which gradients were computed and which weights are to be updated
+        model (Model): the base model on which gradients were computed
+        cloned_model (Model): An identical model on which a gradient step will be taken, preserving the computational
+            graph on the base model.
         grads (list): a list of numpy array, in the same order that model.get_weights provides.
         alpha (float): the magnitude of the gradient step
     """
@@ -43,7 +44,16 @@ def _compute_n_step_grads(model, updated_model, n_step, alpha, loss, data_x, dat
         return grads
     else:
         with tf.GradientTape() as tape:
-            grads = _compute_n_step_grads(model, updated_model, n_step - 1, alpha, loss, data_x, data_y, clipvalue=clipvalue)
+            grads = _compute_n_step_grads(
+                model,
+                updated_model,
+                n_step - 1,
+                alpha,
+                loss,
+                data_x,
+                data_y,
+                clipvalue=clipvalue
+            )
             _update_weights(alpha, grads, model, updated_model, first_update=(n_step == 2), clipvalue=clipvalue)
             preds = updated_model(data_x)
             loss_val = loss(data_y, preds)

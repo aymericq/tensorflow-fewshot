@@ -9,7 +9,7 @@ Prototypical Networks
    :members:
 
 MAML (Model-Agnostic Meta-Learning)
----------------------
+------------------------------------
 .. autoclass:: tensorflow_fewshot.models.MAML
    :members:
 

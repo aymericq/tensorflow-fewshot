@@ -130,7 +130,7 @@ class MAMLTest(TestCase):
 
         # Then
         for i_weight, weights in enumerate(weight_set):
-            self.assertTrue(np.all(weights == expected_weights[i_weight]))
+            self.assertFalse(np.all(weights == expected_weights[i_weight]))
 
     def test_meta_learn_produces_right_model_after_1_step(self):
         # See calculus derivations in theta.py

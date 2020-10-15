@@ -61,6 +61,7 @@ class MAML:
             n_step (int): number of gradient steps taken in the inner loop.
             optimizer (Optimizer): A Keras optimizer (optionally with gradient clipping).
             episode_end_callback (function): a function called at the end of each episode.
+            clipvalue (float): clip gradients values for numerical stability
         """
         updated_model = tf.keras.models.clone_model(self.model)
         for i_epi in range(n_episode):
